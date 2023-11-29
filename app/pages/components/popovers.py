@@ -1,26 +1,26 @@
 import dash_bootstrap_components as dbc
-from dash import html
-from dash import dcc
+from dash import dcc, html
 
 cancer_map = {
-        'LUAD': 'Lung adenocarcinoma',
-        'BRCA': 'Breast invasive carcinoma',
-        'COAD': 'Colon adenocarcinoma',
-        'HNSC': 'Head and Neck squamous cell carcinoma',
-        'KIRC': 'Kidney renal clear cell carcinoma',
-        'KIRP': 'Kidney renal papillary cell carcinoma',
-        'LIHC': 'Liver hepatocellular carcinoma',
-        'LUSC': 'Lung squamous cell carcinoma',
-        'PRAD': 'Prostate adenocarcinoma',
-        'STAD': 'Stomach adenocarcinoma',
-        'THCA': 'Thyroid carcinoma',
-    }
+    "LUAD": "Lung adenocarcinoma",
+    "BRCA": "Breast invasive carcinoma",
+    "COAD": "Colon adenocarcinoma",
+    "HNSC": "Head and Neck squamous cell carcinoma",
+    "KIRC": "Kidney renal clear cell carcinoma",
+    "KIRP": "Kidney renal papillary cell carcinoma",
+    "LIHC": "Liver hepatocellular carcinoma",
+    "LUSC": "Lung squamous cell carcinoma",
+    "PRAD": "Prostate adenocarcinoma",
+    "STAD": "Stomach adenocarcinoma",
+    "THCA": "Thyroid carcinoma",
+}
+
 
 def get_popovers():
     popovers = [
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Display options
                 **Minimum dysregulation fraction:**
                 Allows to filter the displayed regulations by the fraction of patients they are dysregulated in.
@@ -41,16 +41,16 @@ def get_popovers():
                 **Display nodes:**
                 Filter the nodes/genes, so that either only target or only source nodes of the query genes are
                 displayed.
-                ''',
+                """,
             ),
-            target='display_options_info',
+            target="display_options_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Compare options
                 **Compare to cancer type:**
                 Compare the dysregulation fractions of currently displayed regulations to the corresponding ones in a
@@ -66,16 +66,16 @@ def get_popovers():
                 NOTE: Any filtering of the regulations will still be based on the dysregulation fraction of the primary
                 selected cancer type, not on its difference to the compared type.
 
-                ''',
+                """,
             ),
-            target='compare_options_info',
+            target="compare_options_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Downloads 
                 **Download full graph:**
                 Downloads the queried network as a CSV file. All regulations are included, even those
@@ -87,16 +87,16 @@ def get_popovers():
                 **Download graph image:**
                 Downloads the displayed network graph as a PNG image.
                 
-                ''',
+                """,
             ),
-            target='downloads_info',
+            target="downloads_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Display info
                 **Selected cancer type:**
                 Displays the currently selected TCGA study. A full list of the abbreviations can be found 
@@ -111,30 +111,30 @@ def get_popovers():
                 NOTE: The combined values of both categories (source/target regulations) won't necessarily sum up to the
                 total number of edges, since a connection between two query genes is included in both.
     
-                ''',
+                """,
             ),
-            target='display_info_info',
+            target="display_info_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Mutation info
                 The bar chart shows mutation frequencies for query and source/target genes. Click on the name in the
                 legend to exclude one of the categories. The mutation frequency of a gene is defined as the fraction of
                 patients in which the gene possesses at least one mutation.
-                ''',
+                """,
             ),
-            target='mutation_info',
+            target="mutation_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Methylation info
                 Load a heatmap to visualize patient-specific promoter methylation. Each row corresponds to a
                 patient, each column to a query gene. The value of a cell is the average beta-value across all 
@@ -146,16 +146,16 @@ def get_popovers():
                 
                 NOTE: The number of columns can be lower than the number of query genes since methylation data isn't
                 available for every gene.
-                ''',
+                """,
             ),
-            target='methylation_info',
+            target="methylation_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
         dbc.Popover(
             dcc.Markdown(
-                '''
+                """
                 ##### Dysregulation info
                 Load a heatmap to visualize patient-specific dysregulation. Each row corresponds to a
                 patient, each column to a regulation in the currently displayed network graph. The value of a cell is
@@ -166,12 +166,12 @@ def get_popovers():
 
                 NOTE: The heatmap will not update automatically after changing the network graph and has to be
                 refreshed manually.
-                ''',
+                """,
             ),
             target="dysregulation_info",
             body=True,
-            trigger='legacy',
-            placement='auto',
+            trigger="legacy",
+            placement="auto",
         ),
     ]
     return popovers
@@ -180,7 +180,7 @@ def get_popovers():
 def get_gene_popover():
     gene_popover = dbc.Popover(
         dcc.Markdown(
-            '''
+            """
             ##### Gene detail information
             **Promoter methylation:** 
             Indicates the promoter methylation averaged across patients with available methylation data. The patient 
@@ -197,12 +197,12 @@ def get_gene_popover():
             **Add/Remove:**
             Adds the gene to the query, if it is not yet part of it. Else it removes the gene from the query.
             
-            ''',
+            """,
         ),
-        target='gene_info',
+        target="gene_info",
         body=True,
-        trigger='legacy',
-        placement='auto',
+        trigger="legacy",
+        placement="auto",
     )
 
     return gene_popover
@@ -211,17 +211,17 @@ def get_gene_popover():
 def get_regulation_popover():
     regulation_popover = dbc.Popover(
         dcc.Markdown(
-            '''
+            """
             ##### Regulation detail information
             **Fraction of dysregulated patients:**
             Displays the fraction of patients with a dysregulation regarding this edge. The value matches the 
             corresponding red bar in the network graph.
-            ''',
+            """,
         ),
-        target='regulation_info',
+        target="regulation_info",
         body=True,
-        trigger='legacy',
-        placement='auto',
+        trigger="legacy",
+        placement="auto",
     )
 
     return regulation_popover
@@ -233,21 +233,21 @@ def info_button(popover_id):
         id=popover_id,
         outline=True,
         color="primary",
-        size="sm"
+        size="sm",
     )
     return info_button
 
 
 def heading_with_info(text, popover_id):
     return html.Div(
-        [
-            html.H5(text),
-            html.Div(info_button(popover_id))
-        ],  className="d-grid gap-2 mb-2 d-md-flex justify-content-md-between"
+        [html.H5(text), html.Div(info_button(popover_id))],
+        className="d-grid gap-2 mb-2 d-md-flex justify-content-md-between",
     )
+
 
 def get_cancer_map():
     return cancer_map
+
 
 def map_cancer(cancer):
     return cancer_map.get(cancer)

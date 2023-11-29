@@ -1,17 +1,18 @@
 import os
-from neo4j import GraphDatabase
-from collections import defaultdict
 import time
+from collections import defaultdict
+
+from neo4j import GraphDatabase
+
 
 class NetworkDB:
-
     def __init__(self):
-        uri = 'bolt://dysregnet-neo4j:7687'
-        pw = os.getenv('DB_PASSWORD', "12345678")
-        if os.getenv('DB_PASSWORD') is None:
-            uri = 'bolt://localhost:7687'
+        uri = "bolt://dysregnet-neo4j:7687"
+        pw = os.getenv("DB_PASSWORD", "12345678")
+        if os.getenv("DB_PASSWORD") is None:
+            uri = "bolt://localhost:7687"
         self.uri = uri
-        self.auth = ('neo4j', pw)
+        self.auth = ("neo4j", pw)
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth)
 
     def close(self):
@@ -26,35 +27,45 @@ class NetworkDB:
         return self.get_value(command)
 
     def get_neighborhood(self, gene_id, cancer_id):
-        query_map = {"center": f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}}) RETURN center;",
-                      "sources": (f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
-                       f"MATCH (source:{cancer_id}_Gene) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (center)\n"
-                       "RETURN  source, regulation"),
-                      "targets": (f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
-                       f"MATCH (center) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (target:{cancer_id}_Gene)\n"
-                       "RETURN  target, regulation")
-                      }
+        query_map = {
+            "center": f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}}) RETURN center;",
+            "sources": (
+                f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
+                f"MATCH (source:{cancer_id}_Gene) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (center)\n"
+                "RETURN  source, regulation"
+            ),
+            "targets": (
+                f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
+                f"MATCH (center) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (target:{cancer_id}_Gene)\n"
+                "RETURN  target, regulation"
+            ),
+        }
         start = time.time()
         result_map = self.get_data_map(query_map)
-        print("Transaction time: " + str(time.time()-start))
+        print("Transaction time: " + str(time.time() - start))
         return result_map
 
     def get_neighborhood_multi(self, gene_ids, cancer_id):
         query_map_list = []
         for gene_id in gene_ids:
             query_map_list.append(
-                {"center": f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}}) RETURN center;",
-                      "sources": (f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
-                       f"MATCH (source:{cancer_id}_Gene) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (center)\n"
-                       "RETURN  source, regulation"),
-                      "targets": (f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
-                       f"MATCH (center) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (target:{cancer_id}_Gene)\n"
-                       "RETURN  target, regulation")
+                {
+                    "center": f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}}) RETURN center;",
+                    "sources": (
+                        f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
+                        f"MATCH (source:{cancer_id}_Gene) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (center)\n"
+                        "RETURN  source, regulation"
+                    ),
+                    "targets": (
+                        f"MATCH (center:{cancer_id}_Gene{{gene_id: '{gene_id}'}})\n"
+                        f"MATCH (center) -[:REGULATES]-> (regulation:{cancer_id}_Regulation) -[:REGULATED]-> (target:{cancer_id}_Gene)\n"
+                        "RETURN  target, regulation"
+                    ),
                 }
             )
         start = time.time()
         result_map_list = self.get_data_map_list(query_map_list)
-        print("Neighborhood transaction time: " + str(time.time()-start))
+        print("Neighborhood transaction time: " + str(time.time() - start))
         return result_map_list
 
     def get_fraction_map(self, regulation_ids, cancer_id):
@@ -65,14 +76,14 @@ class NetworkDB:
         )
         start = time.time()
         fractions = self.get_values(query)
-        print("Fraction map transaction time: " + str(time.time()-start))
+        print("Fraction map transaction time: " + str(time.time() - start))
         return {fraction[0]: fraction[1] for fraction in fractions}
 
     def get_patients(self, regulation_id, cancer_id):
         query = f"MATCH (patient:{cancer_id}_Patient) -[dysregulation:DYSREGULATED]-> (:{cancer_id}_Regulation {{regulation_id: '{regulation_id}'}}) RETURN patient, dysregulation.value AS dysregulation"
         start = time.time()
         result = self.get_data(query)
-        print("Patient transaction time: " + str(time.time()-start))
+        print("Patient transaction time: " + str(time.time() - start))
         return result
 
     def get_methylation(self, gene_ids, cancer_id):
@@ -84,7 +95,7 @@ class NetworkDB:
 
         start = time.time()
         result = self.get_values(query)
-        print("Methylation transaction time: " + str(time.time()-start))
+        print("Methylation transaction time: " + str(time.time() - start))
         return result
 
     def get_dysregulation(self, regulation_ids, cancer_id):
@@ -96,7 +107,7 @@ class NetworkDB:
 
         start = time.time()
         result = self.get_values(query)
-        print("Dysregulation transaction time: " + str(time.time()-start))
+        print("Dysregulation transaction time: " + str(time.time() - start))
         return result
 
     def get_value(self, command):
@@ -123,4 +134,7 @@ class NetworkDB:
 
     def get_data_map_list(self, query_map_list):
         with self.driver.session() as session:
-            return [{key: session.run(query_map[key]).data() for key in query_map.keys()} for query_map in query_map_list]
+            return [
+                {key: session.run(query_map[key]).data() for key in query_map.keys()}
+                for query_map in query_map_list
+            ]
