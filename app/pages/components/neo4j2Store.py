@@ -1,6 +1,4 @@
-from functools import reduce
-
-import pages.components.parameters
+import pages.components.parameters as parameters
 
 
 def get_neighborhood(graph_map_list):

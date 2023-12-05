@@ -1,12 +1,21 @@
+import collections
+
 import dash
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 from dash import callback, clientside_callback, dcc, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
 
+import pages.components.neo4j2csv as neo4j2csv
+import pages.components.neo4j2Store as neo4j2Store
 from pages.components.db import NetworkDB
 from pages.components.detail import detail, edge_detail, node_detail
 from pages.components.graph import graph
+from pages.components.plots import (
+    dysregulation_heatmap,
+    methylation_heatmap,
+    mutation_bar,
+)
 from pages.components.popovers import get_cancer_map, get_popovers
 from pages.components.settings import get_settings
 from pages.components.tabs import tabs
