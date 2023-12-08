@@ -1,13 +1,12 @@
 import base64
 import io
-import sys
 from contextlib import redirect_stderr
 from typing import Any, Dict, List, Literal, Tuple, Union
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import callback, dcc, html
+from dash import callback, html
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
 from pages.components.dysregnet_progress import DysregnetProgress
