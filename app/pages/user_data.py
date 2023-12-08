@@ -1,14 +1,16 @@
 import base64
 import io
-from typing import Dict, List, Literal, Tuple, Union
+import sys
+from contextlib import redirect_stderr
+from typing import Any, Dict, List, Literal, Tuple, Union
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import callback, html
+from dash import callback, dcc, html
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
-
+from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_input import get_input_layout
 from pages.components.user_output import get_output_layout
@@ -259,9 +261,16 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
     running=[
         (Output("modal", "is_open"), True, False),
     ],
+    progress=[
+        Output("progress", "value"),
+        Output("progress", "max"),
+        Output("progress", "label"),
+    ],
+    interval=100,
     prevent_initial_call=True,
 )
 def run(
+    set_progress: Any,
     n_clicks: Union[int, None],
     condition: str,
     cat_cov: Union[List[str], None],
@@ -300,25 +309,29 @@ def run(
         global expression_df
         global meta_df
         global network_df
-
         try:
-            results = get_results(
-                expression_df,
-                meta_df,
-                network_df,
-                condition,
-                [] if cat_cov is None else cat_cov,
-                [] if con_cov is None else con_cov,
-                zscoring,
-                1e-2 if bonferroni is None else bonferroni,
-                normaltest,
-                1e-3 if normaltest_alpha is None else normaltest_alpha,
-                r2,
-                condition_direction,
-            )
+            with DysregnetProgress() as f:
+                f.set_max(max=len(network_df))
+                f.set_progress = set_progress
+                with redirect_stderr(new_target=f):
+                    results = get_results(
+                        expression_df,
+                        meta_df,
+                        network_df,
+                        condition,
+                        [] if cat_cov is None else cat_cov,
+                        [] if con_cov is None else con_cov,
+                        zscoring,
+                        1e-2 if bonferroni is None else bonferroni,
+                        normaltest,
+                        1e-3 if normaltest_alpha is None else normaltest_alpha,
+                        r2,
+                        condition_direction,
+                    )
 
             return get_output_layout(results), "", {"display": "None"}
         except Exception as e:
+            print(e)
             return (
                 dash.no_update,
                 f"Error: Something went wrong ({e})",

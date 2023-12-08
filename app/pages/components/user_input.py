@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+from pandas import wide_to_long
 
 
 def get_input_layout() -> dbc.Container:
@@ -322,21 +323,7 @@ def get_input_layout() -> dbc.Container:
                     dbc.ModalHeader(
                         dbc.ModalTitle("Running DysRegNet"), close_button=False
                     ),
-                    dbc.ModalBody(
-                        [
-                            html.Center(
-                                [
-                                    dbc.Spinner(
-                                        spinner_style={
-                                            "width": "3rem",
-                                            "height": "3rem",
-                                        },
-                                        color="secondary",
-                                    ),
-                                ]
-                            )
-                        ]
-                    ),
+                    dbc.ModalBody([html.Center([dbc.Progress(id="progress")])]),
                     dbc.ModalFooter(
                         dbc.Button(
                             "Cancel",
@@ -352,5 +339,6 @@ def get_input_layout() -> dbc.Container:
                 backdrop="static",
                 centered=True,
             ),
-        ]
+        ],
+        id="input_layout",
     )

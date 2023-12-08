@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import dysregnet
 import pandas as pd
@@ -15,7 +15,7 @@ def get_results(
     bonferroni: float,
     normaltest: bool,
     normaltest_alpha: float,
-    r2: float,
+    r2: Union[float, None],
     condition_direction: bool,
 ) -> pd.DataFrame:
     """
