@@ -36,7 +36,7 @@ def get_input_layout() -> dbc.Container:
                                         "A csv file containing a expression matrix with samples as rows and genes as columns.",
                                         "The first column should be sample names and the first row should be the gene names.",
                                         icon_size="1.3rem",
-                                        download="https://drive.google.com/u/0/uc?id=1uV9P9D33mB9g5on5mPj68KLM6Ge-rFb9&export=download",
+                                        download="https://figshare.com/ndownloader/files/43544799",
                                     ),
                                 ],
                             ),
@@ -68,7 +68,7 @@ def get_input_layout() -> dbc.Container:
                                         "A csv file containing meta data.",
                                         "The first column should contain samples ids and other columns for the condition and the covariates.",
                                         icon_size="1.3rem",
-                                        download="https://drive.google.com/u/0/uc?id=1dJKcyBrRQi-7-KgWhy4vAHo-x1MugOvR&export=download",
+                                        download="https://figshare.com/ndownloader/files/43544802",
                                     ),
                                 ]
                             ),
@@ -103,7 +103,7 @@ def get_input_layout() -> dbc.Container:
                                         "A csv file containing a gene regulatory network.",
                                         "The file should contain exactly two columns in the following order: ['TF', 'target'].",
                                         icon_size="1.3rem",
-                                        download="https://drive.google.com/u/0/uc?id=1KE1SLe7nc0f6w8rskWiMjtIjs3idSCqH&export=download",
+                                        download="https://figshare.com/ndownloader/files/43544805",
                                     ),
                                 ]
                             ),
