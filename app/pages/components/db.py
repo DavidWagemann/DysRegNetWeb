@@ -85,6 +85,17 @@ class NetworkDB:
         result = self.get_data(query)
         print("Patient transaction time: " + str(time.time() - start))
         return result
+    
+    #return options for dropdown for which patient_ids we have in db
+    def get_all_patient_ids(self):
+        query = f"MATCH (p:Patient) RETURN DISTINCT p.patient_id;"
+        start = time.time()
+        result = self.get_data(query)
+        print("Patient transaction time: " + str(time.time() - start))
+        patient_ids = [value for item in result for value in item.values()]
+        options = [{"label": name, "value": name.lower()} for name in patient_ids]
+
+        return options
 
     def get_methylation(self, gene_ids, cancer_id):
         query = (

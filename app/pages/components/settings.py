@@ -1,11 +1,14 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-
 import pages.components.parameters as parameters
 from pages.components.popovers import heading_with_info, info_button
-
+from pages.components.db import NetworkDB
+db = NetworkDB()
 
 def get_settings():
+    dropdown_options = db.get_all_patient_ids()
+    print(len(dropdown_options))
+
     settings = [
         dbc.Card(
             dbc.CardBody(
@@ -50,6 +53,13 @@ def get_settings():
                         value="a",
                         multi=False,
                         id="display_nodes",
+                    ),
+                    html.Label("Patient Specific:"),
+                    dcc.Dropdown(
+                        options=dropdown_options,
+                        value=dropdown_options[0]["value"],
+                        multi=False,
+                        id="patient_specific",
                     ),
                 ]
             ),
