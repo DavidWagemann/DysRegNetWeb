@@ -1,3 +1,4 @@
 /data/
 /.idea/
 /app/__pycache__/
+app/pages/__pycache__/
