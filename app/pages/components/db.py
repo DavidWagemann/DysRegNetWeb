@@ -87,8 +87,9 @@ class NetworkDB:
         return result
     
     #return options for dropdown for which patient_ids we have in db
-    def get_all_patient_ids(self):
-        query = f"MATCH (p:Patient) RETURN DISTINCT p.patient_id;"
+    def get_all_patient_ids(self, selected_cancer_id):
+        query = f"MATCH (p:{selected_cancer_id}_Patient) RETURN DISTINCT p.patient_id;"
+        #print(query)
         start = time.time()
         result = self.get_data(query)
         print("Patient transaction time: " + str(time.time() - start))

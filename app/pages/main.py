@@ -155,6 +155,17 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
             )
     raise dash.exceptions.PreventUpdate
 
+#Test
+@callback(
+    Output("patient_specific", "options"),
+    Output("patient_specific", "value"),
+    Input("cancer_id_input", "value"),
+)
+def update_patient_specific_options(selected_cancer_id):
+    dropdown_options = db.get_all_patient_ids(selected_cancer_id)
+    default_value = dropdown_options[0]["value"] if dropdown_options else None
+    
+    return dropdown_options, default_value
 
 @callback(
     Output(component_id="store_graph", component_property="data"),

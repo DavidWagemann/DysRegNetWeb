@@ -6,9 +6,6 @@ from pages.components.db import NetworkDB
 db = NetworkDB()
 
 def get_settings():
-    dropdown_options = db.get_all_patient_ids()
-    print(len(dropdown_options))
-
     settings = [
         dbc.Card(
             dbc.CardBody(
@@ -56,8 +53,10 @@ def get_settings():
                     ),
                     html.Label("Patient Specific:"),
                     dcc.Dropdown(
-                        options=dropdown_options,
-                        value=dropdown_options[0]["value"],
+                        #options=dropdown_options,
+                        #value=dropdown_options[0]["value"],
+                        options=[],
+                        value=None,
                         multi=False,
                         id="patient_specific",
                     ),
