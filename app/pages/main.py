@@ -10,7 +10,7 @@ import pages.components.neo4j2csv as neo4j2csv
 import pages.components.neo4j2Store as neo4j2Store
 from pages.components.db import NetworkDB
 from pages.components.detail import detail, edge_detail, node_detail
-from pages.components.graph import graph
+from pages.components.graph import get_graph
 from pages.components.plots import (
     dysregulation_heatmap,
     methylation_heatmap,
@@ -77,7 +77,7 @@ layout = html.Div(
         dbc.Row(
             [
                 dbc.Col(get_settings(), xs=12, sm=12, md=12, lg=3, xl=3, xxl=2),
-                dbc.Col([graph], xs=12, sm=12, md=12, lg=9, xl=9, xxl=5),
+                dbc.Col([get_graph("graph")], xs=12, sm=12, md=12, lg=9, xl=9, xxl=5),
                 dbc.Col([detail, tabs], xs=12, sm=12, md=12, lg=12, xl=12, xxl=5),
             ],
             style={"marginTop": "15px", "marginBottom": "10px", "height": "85vh"},
@@ -157,11 +157,20 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
 
 
 @callback(
-    Output(component_id="store_graph", component_property="data"),
-    Output(component_id="total_targets", component_property="children"),
-    Output(component_id="total_sources", component_property="children"),
+    Output(component_id="store_graph", component_property="data", allow_duplicate=True),
+    Output(
+        component_id="total_targets",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Output(
+        component_id="total_sources",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="store_selection", component_property="data"),
     Input(component_id="compare_cancer", component_property="value"),
+    prevent_initial_call=True,
 )
 def update_graph_data(selection_data, compare_cancer):
     if len(selection_data["gene_ids"]) != 0 and selection_data["cancer_id"] != "":
@@ -188,7 +197,7 @@ def update_graph_data(selection_data, compare_cancer):
 
 
 @callback(
-    Output(component_id="detail", component_property="children"),
+    Output(component_id="detail", component_property="children", allow_duplicate=True),
     Output(component_id="graph", component_property="tapNodeData"),
     Output(component_id="graph", component_property="tapEdgeData"),
     Input(component_id="graph", component_property="tapNodeData"),
@@ -196,6 +205,7 @@ def update_graph_data(selection_data, compare_cancer):
     State(component_id="store_selection", component_property="data"),
     State(component_id="store_compare", component_property="data"),
     State(component_id="compare_cancer", component_property="value"),
+    prevent_initial_call=True,
 )
 def update_detail(node, edge, selection_data, compare, compare_cancer):
     if selection_data is not None:
