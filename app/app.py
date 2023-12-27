@@ -7,9 +7,25 @@ import dash_cytoscape as cyto
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from dash import dcc, html
+from dash import CeleryManager, DiskcacheManager, callback, dcc, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from flask import Flask
+
+if "REDIS_URL" in os.environ:
+    # Use Redis & Celery if REDIS_URL set as an env variable
+    from celery import Celery
+
+    celery_app = Celery(
+        __name__, broker=os.environ["REDIS_URL"], backend=os.environ["REDIS_URL"]
+    )
+    background_callback_manager = CeleryManager(celery_app)
+
+else:
+    # Diskcache for non-production apps when developing locally
+    import diskcache
+
+    cache = diskcache.Cache("./cache")
+    background_callback_manager = DiskcacheManager(cache)
 
 FONT_AWESOME = (
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
@@ -23,6 +39,7 @@ app = dash.Dash(
     title="DysRegNet",
     external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME],
     # requests_pathname_prefix=os.getenv("SUBDOMAIN", "/"),
+    background_callback_manager=background_callback_manager,
     use_pages=True,
 )
 

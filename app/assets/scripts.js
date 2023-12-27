@@ -5,7 +5,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
-				
+				console.log(data)
 				var layout = {"name": "klay"};
 				var display = new Set();
 				var compare = "compare" in data;
@@ -130,6 +130,89 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 			}
 			else{
 				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0, window.dash_clientside.no_update];
+			}
+        },
+
+		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, genes) {
+			//Check if these two functions can't be merged
+
+			if(Object.keys(graph_data).length != 0){
+				
+				var data = JSON.parse(JSON.stringify(graph_data))
+				console.log(data)
+				var layout = {"name": "klay"};
+				var display = new Set();
+
+				if (display_nodes !== 'a'){
+					
+					if(genes.length == 1){
+						layout = {'name': 'concentric'};
+					}
+					else{
+						layout = {'name': 'klay'};
+					}
+					display.add(display_nodes)
+				}
+				else{
+					display.add("s");
+					display.add("t");
+				}
+
+				var diameter = 30;
+				var elements = [];
+				
+				for (var gene of data["center"]){
+				    diameter = 30;
+					gene["data"]["diameter"] = diameter;
+
+					elements.push(gene);
+				}
+				
+				var nr = 0;
+				var target_counter = 0;
+				var source_counter = 0;
+			
+				for (var regulation of data["regulations"]){
+									
+					
+					if(nr >= max_regulations_slider){break;}
+
+					var gene = regulation[1];
+					var reg = regulation[0];
+
+					if(reg["data"]["fraction"] < min_fraction_slider){continue;}
+
+					
+					reg["data"]["colors"] = "red red grey grey";
+					reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
+					reg["data"]["diff"] = 0;
+						
+					if(Object.keys(gene).length === 0){
+						nr += 1;
+						target_counter += 1;
+						source_counter += 1;
+						elements.push(reg);
+					}
+					else if( display.has(gene["classes"]) ){
+                        diameter = 30;
+                        if(gene["classes"] === "t"){
+						    target_counter+=1;
+						}
+						else if (gene["classes"] === "s"){
+						    source_counter += 1;
+						}
+						nr += 1;
+
+						gene["data"]["diameter"] = diameter;
+						elements.push(gene);
+						elements.push(reg);
+					}
+				}
+
+				return [elements, layout, target_counter, source_counter];
+			}
+			else{
+				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0];
 			}
         }
 
