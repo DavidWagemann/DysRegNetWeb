@@ -1,5 +1,6 @@
 import base64
 import io
+from ast import expr
 from contextlib import redirect_stderr
 from typing import Any, Dict, List, Literal, Tuple, Union
 
@@ -9,7 +10,6 @@ import pandas as pd
 from dash import callback, dcc, html
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
-
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
@@ -465,6 +465,9 @@ def get_input_layout() -> dbc.Container:
                 backdrop="static",
                 centered=True,
             ),
+            dash.dcc.Store(id="expression_data", storage_type="memory"),
+            dash.dcc.Store(id="network_data", storage_type="memory"),
+            dash.dcc.Store(id="meta_data", storage_type="memory"),
         ],
         id="input_layout",
     )
@@ -568,6 +571,9 @@ def upload_name_update(
     Output("errorbox", "style", allow_duplicate=True),
     Output("select-cols", "style"),
     Output("loading-options-output", "children"),
+    Output("expression_data", "data"),
+    Output("network_data", "data"),
+    Output("meta_data", "data"),
     Input("expression", "contents"),
     Input("meta", "contents"),
     Input("network", "contents"),
@@ -605,19 +611,16 @@ def show_dropdown_options(
     """
     if expression is not None and meta is not None and network is not None:
         try:
-            global expression_df
             expression_df = pd.read_csv(
                 io.StringIO(
                     base64.b64decode(expression.split(",")[1] + "===").decode("utf-8")
                 ),
             )
-            global meta_df
             meta_df = pd.read_csv(
                 io.StringIO(
                     base64.b64decode(meta.split(",")[1] + "===").decode("utf-8")
                 ),
             )
-            global network_df
             network_df = pd.read_csv(
                 io.StringIO(
                     base64.b64decode(network.split(",")[1] + "===").decode("utf-8")
@@ -633,6 +636,9 @@ def show_dropdown_options(
                     {"display": "block"},
                     {"display": "None"},
                     dash.no_update,
+                    {},
+                    {},
+                    {},
                 )
 
             if len(network_df.columns) != 2:
@@ -644,6 +650,9 @@ def show_dropdown_options(
                     {"display": "block"},
                     {"display": "None"},
                     dash.no_update,
+                    {},
+                    {},
+                    {},
                 )
 
             # TODO: check for matching gene names in expression and network
@@ -665,6 +674,9 @@ def show_dropdown_options(
                     {"display": "block"},
                     {"display": "None"},
                     dash.no_update,
+                    {},
+                    {},
+                    {},
                 )
 
             covariates = [{"label": option, "value": option} for option in columns]
@@ -676,6 +688,9 @@ def show_dropdown_options(
                 {"display": "None"},
                 {"display": "flex"},
                 "",
+                expression_df.to_dict(),
+                network_df.to_dict(),
+                meta_df.to_dict(),
             )
         except Exception as e:
             return (
@@ -686,6 +701,9 @@ def show_dropdown_options(
                 {"display": "block"},
                 {"display": "None"},
                 dash.no_update,
+                {},
+                {},
+                {},
             )
 
     return (
@@ -696,6 +714,9 @@ def show_dropdown_options(
         {"display": "None"},
         {"display": "None"},
         dash.no_update,
+        {},
+        {},
+        {},
     )
 
 
@@ -755,6 +776,9 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
         State("normaltest-alpha", "value"),
         State("r2", "value"),
         State("condition-direction", "value"),
+        State("expression_data", "data"),
+        State("network_data", "data"),
+        State("meta_data", "data"),
     ],
     cancel=[Input("cancel-run", "n_clicks")],
     background=True,
@@ -781,6 +805,9 @@ def run(
     normaltest_alpha: Union[float, None],
     r2: Union[float, None],
     condition_direction: bool,
+    expression: Dict[str, Dict[str, str]],
+    network: Dict[str, Dict[str, str]],
+    meta: Dict[str, Dict[str, str]],
 ) -> Union[
     Tuple[dbc.Container, Literal[""], Dict[str, str]],
     Tuple[NoUpdate, str, Dict[str, str]],
@@ -807,9 +834,9 @@ def run(
         dict: A dictionary representing the CSS style for displaying the error message.
     """
     if n_clicks is not None:
-        global expression_df
-        global meta_df
-        global network_df
+        expression_df = pd.DataFrame(expression)
+        meta_df = pd.DataFrame(meta)
+        network_df = pd.DataFrame(network)
         try:
             with DysregnetProgress() as f:
                 f.set_max(max=len(network_df))

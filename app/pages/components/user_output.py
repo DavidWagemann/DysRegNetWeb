@@ -4,7 +4,6 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import callback, clientside_callback, dcc, exceptions, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
-
 from pages.components.detail import detail, user_edge_detail, user_node_detail
 from pages.components.dysregnet_results import (
     get_graph_data,
