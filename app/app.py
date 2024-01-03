@@ -38,7 +38,7 @@ app = dash.Dash(
     server=server,
     title="DysRegNet",
     external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME],
-    # requests_pathname_prefix=os.getenv("SUBDOMAIN", "/"),
+    requests_pathname_prefix=os.getenv("SUBDOMAIN", "/"),
     background_callback_manager=background_callback_manager,
     use_pages=True,
 )

@@ -17,6 +17,10 @@ from pages.components.popovers import get_popovers
 from pages.components.settings import get_user_settings
 from pages.components.tabs import user_data_tabs
 
+import dash
+from pages.components.plots import dysregulation_heatmap
+from pages.components.plots import blank_fig
+
 
 def get_output_layout(results: pd.DataFrame) -> dbc.Container:
     """
@@ -261,3 +265,53 @@ def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[st
         return new
 
     raise exceptions.PreventUpdate
+
+
+@callback(
+    Output(component_id="user_dysregulation_plot", component_property="figure"),
+    Output(component_id="user_refresh_dysregulation_button", component_property="children"),
+    Input(component_id="user_refresh_dysregulation_button", component_property="n_clicks"),
+    State(component_id="user_graph", component_property="elements"),
+    State(component_id="user_gene_id_input", component_property="value"),
+    State(component_id="results", component_property="data"),
+    prevent_initial_call=True,
+)
+def update_dysregulation_plot(n_clicks: int, elements, genes: List[str], results_json: str):
+    if (
+            n_clicks > 0
+            and elements is not None
+            and len(genes) != 0
+    ):
+        results = pd.DataFrame(results_json)
+        results.columns = [c.replace(',', ':') for c in results.columns]
+
+        regulation_ids = [
+            element["data"]["regulation_id"]
+            for element in elements
+            if "regulation_id" in element["data"]
+        ]
+
+        results = results.filter(items=regulation_ids)
+        results = results.loc[(results != 0).any(axis=1)]
+
+        rows = results.index.tolist()
+        data = []
+        for col in results.columns:
+            rowindex = 0
+            for value in results[col]:
+                if value != 0:
+                    data.append([str(col), rows[rowindex], value])
+                rowindex += 1
+
+        if len(data) == 0:
+            return blank_fig(), [
+                html.I(className="fa fa-refresh mr-1"),
+                " Refresh",
+            ]
+
+        return dysregulation_heatmap(data), [
+            html.I(className="fa fa-refresh mr-1"),
+            " Refresh",
+        ]
+
+    raise dash.exceptions.PreventUpdate
