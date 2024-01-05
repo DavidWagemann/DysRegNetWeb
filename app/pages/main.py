@@ -20,6 +20,8 @@ from pages.components.popovers import get_cancer_map, get_popovers
 from pages.components.settings import get_settings
 from pages.components.tabs import tabs
 
+from pages.components.plots import blank_fig
+
 dash.register_page(__name__, path="/")
 
 db = NetworkDB()
@@ -391,6 +393,13 @@ def update_dysregulation_plot(n_clicks, elements, selection_data):
             if "regulation_id" in element["data"]
         ]
         data = db.get_dysregulation(regulation_ids, selection_data["cancer_id"])
+
+        if len(data) == 0:
+            return blank_fig(), [
+                html.I(className="fa fa-refresh mr-1"),
+                " Refresh",
+            ]
+
         if len(data) > 0:
             return dysregulation_heatmap(data), [
                 html.I(className="fa fa-refresh mr-1"),
