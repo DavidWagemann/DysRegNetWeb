@@ -99,7 +99,7 @@ def get_output_layout(results: pd.DataFrame) -> dbc.Container:
 )
 def update_gene_input(search_value: str, value: List[str], data: Dict[str, List[str]]) -> List[str]:
     if not search_value:
-        return [o for o in data["gene_ids"]]
+        return data["gene_ids"]
 
     return [
         o
