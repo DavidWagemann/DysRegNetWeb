@@ -97,11 +97,9 @@ def get_output_layout(results: pd.DataFrame) -> dbc.Container:
     State("user_gene_id_input", "value"),
     State("user_genes_store", "data"),
 )
-def update_gene_input(
-    search_value: str, value: List[str], data: Dict[str, List[str]]
-) -> List[str]:
+def update_gene_input(search_value: str, value: List[str], data: Dict[str, List[str]]) -> List[str]:
     if not search_value:
-        raise exceptions.PreventUpdate
+        return [o for o in data["gene_ids"]]
 
     return [
         o
@@ -120,8 +118,8 @@ def update_gene_input(
         component_id="user_total_sources",
         component_property="children",
     ),
-    Input("user_gene_id_input", "value"),
-    State("results", "data"),
+    Input(component_id="user_gene_id_input", component_property="value"),
+    State(component_id="results", component_property="data"),
     prevent_initial_call=True,
 )
 def update_graph_data(genes: List[str], results_json: str):
@@ -252,17 +250,17 @@ def select_query(n_clicks: int, gene: str):
     Input("user_center_add_button", "n_clicks"),
     State("user_center_add_button", "children"),
     State("detail_selected_gene", "children"),
-    State("user_gene_id_input", "options"),
+    State("user_gene_id_input", "value"),
     prevent_initial_call=True,
 )
 def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[str]):
     if n_clicks > 0:
         if "Add" in change_type[1]:
-            new = current.append(gene)
+            current.append(gene)
         else:
-            new = [q for q in current if q != gene]
+            current.remove(gene)
 
-        return new
+        return current
 
     raise exceptions.PreventUpdate
 
