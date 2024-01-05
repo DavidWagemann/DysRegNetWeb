@@ -12,8 +12,7 @@ def get_targets(results: pd.DataFrame, ids: List[str]):
 
 
 def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str]):
-    combined = pd.concat([sources, targets], axis=1)
-    combined = combined.T.drop_duplicates().T
+    targets = targets[targets.columns.difference(sources.columns)]
 
     source_regulations = [
         [
@@ -24,7 +23,7 @@ def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str])
                     "regulation_id": f"{col[0]}:{col[1]}",
                     "fraction": float((sources[[col]] != 0).sum() / len(sources)),
                     "weight": float((sources[[col]] != 0).sum() / len(sources)) * 10
-                    + 2,  # TODO: what is this?
+                    + 2,
                     "classes": "r"
                     if sources[col].mean() < 0
                     else "a",  # TODO: check if this is correct
