@@ -123,7 +123,7 @@ def update_gene_input(
     prevent_initial_call=True,
 )
 def update_graph_data(genes: List[str], results_json: str):
-    if len(genes) != 0:
+    if len(genes) > 0:
         results = pd.DataFrame(results_json)
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
@@ -137,7 +137,6 @@ def update_graph_data(genes: List[str], results_json: str):
             total_regulations["total_targets"],
             total_regulations["total_sources"],
         )
-
     raise exceptions.PreventUpdate
 
 
@@ -281,37 +280,38 @@ def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[st
 def update_dysregulation_plot(
     n_clicks: int, elements, genes: List[str], results_json: str
 ):
-    if n_clicks > 0 and elements is not None and len(genes) != 0:
-        results = pd.DataFrame(results_json)
-        results.columns = [c.replace(",", ":") for c in results.columns]
+    if n_clicks > 0 and elements is not None:
+        if len(genes) > 0:
+            results = pd.DataFrame(results_json)
+            results.columns = [c.replace(",", ":") for c in results.columns]
 
-        regulation_ids = [
-            element["data"]["regulation_id"]
-            for element in elements
-            if "regulation_id" in element["data"]
-        ]
+            regulation_ids = [
+                element["data"]["regulation_id"]
+                for element in elements
+                if "regulation_id" in element["data"]
+            ]
 
-        results = results.filter(items=regulation_ids)
-        results = results.loc[(results != 0).any(axis=1)]
+            results = results.filter(items=regulation_ids)
+            results = results.loc[(results != 0).any(axis=1)]
 
-        rows = results.index.tolist()
-        data = []
-        for col in results.columns:
-            rowindex = 0
-            for value in results[col]:
-                if value != 0:
-                    data.append([str(col), rows[rowindex], value])
-                rowindex += 1
+            rows = results.index.tolist()
+            data = []
+            for col in results.columns:
+                rowindex = 0
+                for value in results[col]:
+                    if value != 0:
+                        data.append([str(col), rows[rowindex], value])
+                    rowindex += 1
 
-        if len(data) == 0:
-            return blank_fig(), [
+            return dysregulation_heatmap(data), [
                 html.I(className="fa fa-refresh mr-1"),
                 " Refresh",
             ]
 
-        return dysregulation_heatmap(data), [
-            html.I(className="fa fa-refresh mr-1"),
-            " Refresh",
-        ]
+        else:
+            return blank_fig(), [
+                html.I(className="fa fa-refresh mr-1"),
+                " Refresh",
+            ]
 
     raise dash.exceptions.PreventUpdate

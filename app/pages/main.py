@@ -175,7 +175,7 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
     prevent_initial_call=True,
 )
 def update_graph_data(selection_data, compare_cancer):
-    if len(selection_data["gene_ids"]) != 0 and selection_data["cancer_id"] != "":
+    if len(selection_data["gene_ids"]) > 0 and selection_data["cancer_id"] != "":
         graph_data = db.get_neighborhood_multi(
             selection_data["gene_ids"], selection_data["cancer_id"]
         )
@@ -357,14 +357,19 @@ def update_mutation_plot(elements):
 def update_methylation_plot(n_clicks, selection_data):
     if (
         n_clicks > 0
-        and len(selection_data["gene_ids"]) != 0
         and selection_data["cancer_id"] != ""
     ):
-        data = db.get_methylation(
-            list(selection_data["gene_ids"]), selection_data["cancer_id"]
-        )
-        if len(data) > 0:
-            return methylation_heatmap(data), [
+        if len(selection_data["gene_ids"]) > 0:
+            data = db.get_methylation(
+                list(selection_data["gene_ids"]), selection_data["cancer_id"]
+            )
+            if len(data) > 0:
+                return methylation_heatmap(data), [
+                    html.I(className="fa fa-refresh mr-1"),
+                    " Refresh",
+                ]
+        else:
+            return blank_fig(), [
                 html.I(className="fa fa-refresh mr-1"),
                 " Refresh",
             ]
@@ -384,24 +389,24 @@ def update_dysregulation_plot(n_clicks, elements, selection_data):
     if (
         n_clicks > 0
         and elements is not None
-        and len(selection_data["gene_ids"]) != 0
         and selection_data["cancer_id"] != ""
     ):
-        regulation_ids = [
-            element["data"]["regulation_id"]
-            for element in elements
-            if "regulation_id" in element["data"]
-        ]
-        data = db.get_dysregulation(regulation_ids, selection_data["cancer_id"])
-
-        if len(data) == 0:
-            return blank_fig(), [
-                html.I(className="fa fa-refresh mr-1"),
-                " Refresh",
+        if len(selection_data["gene_ids"]) > 0:
+            regulation_ids = [
+                element["data"]["regulation_id"]
+                for element in elements
+                if "regulation_id" in element["data"]
             ]
+            data = db.get_dysregulation(regulation_ids, selection_data["cancer_id"])
 
-        if len(data) > 0:
-            return dysregulation_heatmap(data), [
+            if len(data) > 0:
+                return dysregulation_heatmap(data), [
+                    html.I(className="fa fa-refresh mr-1"),
+                    " Refresh",
+                ]
+
+        else:
+            return blank_fig(), [
                 html.I(className="fa fa-refresh mr-1"),
                 " Refresh",
             ]
