@@ -137,7 +137,8 @@ def update_graph_data(genes: List[str], results_json: str):
             total_regulations["total_targets"],
             total_regulations["total_sources"],
         )
-    raise exceptions.PreventUpdate
+
+    return {}, 0, 0
 
 
 clientside_callback(

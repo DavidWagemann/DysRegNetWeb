@@ -5,7 +5,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
-				console.log(data)
 				var layout = {"name": "klay"};
 				var display = new Set();
 				var compare = "compare" in data;
@@ -129,17 +128,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 				return [elements, layout, target_counter, source_counter, compare];
 			}
 			else{
-				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0, window.dash_clientside.no_update];
+				return [[], {"name": "klay"}, 0, 0]
 			}
         },
 
 		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, genes) {
-			//Check if these two functions can't be merged
-
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
-				console.log(data)
 				var layout = {"name": "klay"};
 				var display = new Set();
 
@@ -208,11 +204,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 						elements.push(reg);
 					}
 				}
-
 				return [elements, layout, target_counter, source_counter];
 			}
 			else{
-				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0];
+				return [[], {"name": "klay"}, 0, 0]
 			}
         }
 
