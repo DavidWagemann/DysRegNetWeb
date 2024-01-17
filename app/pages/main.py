@@ -155,16 +155,14 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
             )
     raise dash.exceptions.PreventUpdate
 
-#Test
 @callback(
-    Output("patient_specific", "options"),
-    Output("patient_specific", "value"),
-    Input("cancer_id_input", "value"),
+    Output(component_id="patient_specific", component_property="options"),
+    Output(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
 )
 def update_patient_specific_options(selected_cancer_id):
     dropdown_options = db.get_all_patient_ids(selected_cancer_id)
     default_value = dropdown_options[0]["value"] if dropdown_options else None
-    
     return dropdown_options, default_value
 
 @callback(
@@ -173,13 +171,24 @@ def update_patient_specific_options(selected_cancer_id):
     Output(component_id="total_sources", component_property="children"),
     Input(component_id="store_selection", component_property="data"),
     Input(component_id="compare_cancer", component_property="value"),
+    Input(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
 )
-def update_graph_data(selection_data, compare_cancer):
+def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_id_input):
     if len(selection_data["gene_ids"]) != 0 and selection_data["cancer_id"] != "":
         graph_data = db.get_neighborhood_multi(
             selection_data["gene_ids"], selection_data["cancer_id"]
         )
         store_graph, total_regulations = neo4j2Store.get_neighborhood(graph_data)
+        if patient_specific is not None:
+            patient_data = db.get_fraction_map(
+                [
+                    regulation[0]["data"]["regulation_id"]
+                    for regulation in store_graph["regulations"]
+                ],
+                cancer_id_input,
+            )
+            store_graph["patient"] = patient_data
 
         if compare_cancer is not None:
             compare_data = db.get_fraction_map(
