@@ -1,7 +1,6 @@
 import dash_bootstrap_components as dbc
-from dash import dcc, html
-
 import pages.components.parameters as parameters
+from dash import dcc, html
 from pages.components.popovers import heading_with_info, info_button
 
 
@@ -177,6 +176,17 @@ def get_user_settings():
                             dbc.Button(
                                 children=[
                                     html.I(className="fa fa-download mr-1"),
+                                    "Download DysRegNet output (.csv)",
+                                ],
+                                id="btn_download_dysregnet",
+                                outline=True,
+                                color="primary",
+                                style={"textAlign": "left"},
+                                size="sm",
+                            ),
+                            dbc.Button(
+                                children=[
+                                    html.I(className="fa fa-download mr-1"),
                                     " Download queried graph (.csv)",
                                 ],
                                 id="btn_download_user_graph_full",
@@ -214,6 +224,7 @@ def get_user_settings():
             ),
             className="mt-3 mb-3",
         ),
+        dcc.Download(id="download_user_dysregnet"),
         dcc.Download(id="download_user_graph_full"),
         dcc.Download(id="download_user_graph_displayed"),
     ]
