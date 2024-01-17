@@ -1,6 +1,5 @@
 import base64
 import io
-from ast import expr
 from contextlib import redirect_stderr
 from typing import Any, Dict, List, Literal, Tuple, Union
 
@@ -502,7 +501,7 @@ def help_component(target, *args, icon_size, download=None):
         )
 
     button = html.Button(
-        "🛈",
+        html.I(className="fa fa-question-circle-o"),
         id=f"{target}-help",
         style={
             "display": "inline",
