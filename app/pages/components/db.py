@@ -92,7 +92,7 @@ class NetworkDB:
         result = self.get_data(query)
         print("Patient transaction time: " + str(time.time() - start))
         patient_ids = [value for item in result for value in item.values()]
-        options = [{"label": name, "value": name.lower()} for name in patient_ids]
+        options = [{"label": name, "value": name} for name in patient_ids]
         return options
 
     def get_methylation(self, gene_ids, cancer_id):
