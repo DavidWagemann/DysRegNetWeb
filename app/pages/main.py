@@ -181,13 +181,15 @@ def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_i
         )
         store_graph, total_regulations = neo4j2Store.get_neighborhood(graph_data)
         if patient_specific is not None:
-            patient_data = db.get_fraction_map(
+            patient_data = db.get_dysregulation_patient_specific(
                 [
                     regulation[0]["data"]["regulation_id"]
                     for regulation in store_graph["regulations"]
                 ],
                 cancer_id_input,
+                patient_specific,
             )
+            if len(patient_data) >= 1: print("PATIENT DATA", patient_data)
             store_graph["patient"] = patient_data
 
         if compare_cancer is not None:

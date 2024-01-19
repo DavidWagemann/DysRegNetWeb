@@ -86,16 +86,13 @@ class NetworkDB:
         print("Patient transaction time: " + str(time.time() - start))
         return result
     
-    #return options for dropdown for which patient_ids we have in db
     def get_all_patient_ids(self, selected_cancer_id):
         query = f"MATCH (p:{selected_cancer_id}_Patient) RETURN DISTINCT p.patient_id;"
-        #print(query)
         start = time.time()
         result = self.get_data(query)
         print("Patient transaction time: " + str(time.time() - start))
         patient_ids = [value for item in result for value in item.values()]
         options = [{"label": name, "value": name.lower()} for name in patient_ids]
-
         return options
 
     def get_methylation(self, gene_ids, cancer_id):
@@ -120,6 +117,19 @@ class NetworkDB:
         start = time.time()
         result = self.get_values(query)
         print("Dysregulation transaction time: " + str(time.time() - start))
+        return result
+    
+    def get_dysregulation_patient_specific(self, regulation_ids, cancer_id, patient_id):
+        query = (
+            f"MATCH (r:{cancer_id}_Regulation) WHERE r.regulation_id IN {regulation_ids}\n"
+            f"MATCH (p:{cancer_id}_Patient) WHERE p.patient_id = '{patient_id.upper()}'\n"
+            f"MATCH (p)-[d:DYSREGULATED]->(r)\n"
+            f"RETURN r.regulation_id, p.patient_id, d.value"
+        )
+        #print(query)
+        start = time.time()
+        result = self.get_values(query)
+        print("Dysregulation patient specific transaction time: " + str(time.time() - start))
         return result
 
     def get_value(self, command):
