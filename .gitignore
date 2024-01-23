@@ -3,3 +3,4 @@
 /app/pages/components/__pycache__/
 */__pycache__/
 /cache/
+**/__pycache__/
