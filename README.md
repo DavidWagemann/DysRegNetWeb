@@ -51,6 +51,10 @@ docker run -it --rm \
     neo4j:5.11.0
 ```
 
+### Launching the in-menory redis cache
+The app [caches session data](https://dash.plotly.com/background-callbacks) using Celery and a [Redis](https://redis.io/docs/) database.
+
+
 ### Test for production
 Run docker compose inside the repository folder
 ``` bash
