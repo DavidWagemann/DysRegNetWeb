@@ -50,10 +50,31 @@ docker run -it --rm \
     --env NEO4J_AUTH=neo4j/12345678 \
     neo4j:5.11.0
 ```
+If you have user permission problems connected to `--user=$(id -u):$(id -g)`, consider omitting this.
+Also, the container can be run in the background using `-d`.
+``` bash
+docker run -it --rm -d \
+    --name dysregnet-neo4j \
+    -p 7474:7474 -p 7687:7687 \
+    -v ${PWD}/data:/data \
+    --env NEO4J_AUTH=neo4j/12345678 \
+    neo4j:5.11.0
+```
 
-### Launching the in-menory redis cache
-The app [caches session data](https://dash.plotly.com/background-callbacks) using Celery and a [Redis](https://redis.io/docs/) database.
-
+### Launching the in-menory session cache
+The app [caches session data](https://dash.plotly.com/background-callback-caching) using Celery as a broker and a [Redis](https://redis.io/docs/) database.
+Now start the [Redis docker official image](https://www.docker.com/blog/how-to-use-the-redis-docker-official-image/) in a similar fashion to the Neo4j container.
+``` bash
+docker run -it --rm -d \
+    --name dysregnet-redis \
+    -p 6379:6379 \
+    redis:7.2.4
+```
+Alternatively, you can also specify the exposed redis IP more directly using e.g. `-p 127.0.0.1:6379:6379/tcp`.
+Afterwards, export the IP address in the shell you are calling `python app/app.py` from.
+``` bash
+export REDIS_URL="redis://127.0.0.1:6379"
+```
 
 ### Test for production
 Run docker compose inside the repository folder
