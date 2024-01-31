@@ -81,6 +81,11 @@ def get_settings():
                         label="Display dysregulation difference",
                         value=True,
                     ),
+                    dbc.Switch(
+                    id="patient_switch",
+                    label="Display patient specific data",
+                    value=True,
+                )
                 ]
             ),
             className="mt-3",
