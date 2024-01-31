@@ -3,7 +3,7 @@ from typing import List, Union
 import dysregnet
 import pandas as pd
 
-
+# TODO cache function call using celery and redis
 def get_results(
     expression: pd.DataFrame,
     meta: pd.DataFrame,

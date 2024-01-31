@@ -75,6 +75,13 @@ Afterwards, export the IP address in the shell you are calling `python app/app.p
 ``` bash
 export REDIS_URL="redis://127.0.0.1:6379"
 ```
+Now we need to lauch celery worker(s) in a new terminal from the location of `app.py`.
+Keep in mind to use the conda environment to ensure the same software is called from terminal and the dash app.
+For the celery command we need to specify which celery instance we are referring to.
+That is, the variable name of our Celery instance in `app.py` (in our case `celery_broker`).
+``` bash
+celery --app app:celery_broker worker --loglevel=INFO --concurrency=2
+```
 
 ### Test for production
 Run docker compose inside the repository folder

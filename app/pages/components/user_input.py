@@ -12,7 +12,9 @@ from dash.dependencies import Input, Output, State
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
+# from app import app
 
+app = dash.get_app()
 
 def get_input_layout() -> dbc.Container:
     """
@@ -761,7 +763,7 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
     return True, "secondary"
 
 
-@callback(
+@app.callback(
     Output("user-main", "children"),
     Output("errorbox", "children", allow_duplicate=True),
     Output("errorbox", "style", allow_duplicate=True),

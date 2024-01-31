@@ -11,10 +11,10 @@ if "REDIS_URL" in os.environ:
     
     from celery import Celery
 
-    celery_app = Celery(
+    celery_broker = Celery(
         __name__, broker=os.environ["REDIS_URL"], backend=os.environ["REDIS_URL"]
     )
-    background_callback_manager = CeleryManager(celery_app)
+    background_callback_manager = CeleryManager(celery_broker)
 
 else:
     # Hard coded Redis url for non-production apps when developing locally
@@ -23,8 +23,8 @@ else:
     
     from celery import Celery
 
-    celery_app = Celery(__name__, broker=REDIS_URL, backend=REDIS_URL)
-    background_callback_manager = CeleryManager(celery_app)
+    celery_broker = Celery(__name__, broker=REDIS_URL, backend=REDIS_URL)
+    background_callback_manager = CeleryManager(celery_broker)
 
 FONT_AWESOME = (
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
