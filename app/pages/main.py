@@ -128,6 +128,7 @@ clientside_callback(
     Input(component_id="max_regulations_slider", component_property="value"),
     Input(component_id="store_graph", component_property="data"),
     Input(component_id="compare_switch", component_property="value"),
+    Input(component_id="patient_switch", component_property="value"),
     State(component_id="store_selection", component_property="data"),
 )
 
