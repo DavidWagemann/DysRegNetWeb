@@ -1,15 +1,12 @@
 import dash
 from dash import html
-import uuid
 
 from pages.components.user_input import get_input_layout
 
 dash.register_page(__name__, path="/user_data")
 
-def serve_layout():
-    session_id = str(uuid.uuid4())
-
-    return html.Div([
+# TODO: replace result caching by session_id caching
+layout = html.Div([
         html.Div(
             [
                 get_input_layout(),
@@ -19,6 +16,4 @@ def serve_layout():
         ),
         dash.dcc.Store(id="results", storage_type="memory"),
     ])
-
-layout = serve_layout()
 

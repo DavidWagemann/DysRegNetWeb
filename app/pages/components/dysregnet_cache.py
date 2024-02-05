@@ -1,6 +1,5 @@
 import dash
 from flask_caching import Cache
-# import uuid
 
 app = dash.get_app()
 
