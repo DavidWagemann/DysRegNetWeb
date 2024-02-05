@@ -82,6 +82,7 @@ That is, the variable name of our Celery instance in `app.py` (in our case `cele
 ``` bash
 celery --app app:celery_broker worker --loglevel=INFO --concurrency=2
 ```
+For the background callback to work on long callback tasks, please use `python app = dash.get_app()` and `python @app.callback` when implementing new time consuming callbacks in dash. 
 
 ### Test for production
 Run docker compose inside the repository folder

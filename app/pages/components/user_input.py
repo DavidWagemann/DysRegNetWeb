@@ -12,7 +12,7 @@ from dash.dependencies import Input, Output, State
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
-# from app import app
+from uuid import uuid4
 
 app = dash.get_app()
 
@@ -840,6 +840,7 @@ def run(
         expression_df = pd.DataFrame(expression)
         meta_df = pd.DataFrame(meta)
         network_df = pd.DataFrame(network)
+        session_id = str(uuid4())
         try:
             with DysregnetProgress() as f:
                 f.set_max(max=len(network_df))
@@ -858,6 +859,7 @@ def run(
                         1e-3 if normaltest_alpha is None else normaltest_alpha,
                         r2,
                         condition_direction,
+                        session_id,
                     )
 
             out_layout = (get_output_layout(results),)

@@ -2,8 +2,9 @@ from typing import List, Union
 
 import dysregnet
 import pandas as pd
+from pages.components.dysregnet_cache import cache
 
-# TODO cache function call using celery and redis
+@cache.memoize()
 def get_results(
     expression: pd.DataFrame,
     meta: pd.DataFrame,
@@ -17,6 +18,7 @@ def get_results(
     normaltest_alpha: float,
     r2: Union[float, None],
     condition_direction: bool,
+    session_id: str
 ) -> pd.DataFrame:
     """
     Runs the DysRegNet analysis and returns the results.
