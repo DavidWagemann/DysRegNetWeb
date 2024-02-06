@@ -1,7 +1,6 @@
 import base64
 import io
 import time
-from ast import expr
 from contextlib import redirect_stderr
 from typing import Any, Dict, List, Literal, Tuple, Union
 
@@ -318,6 +317,7 @@ def get_input_layout() -> dbc.Container:
                                                 [
                                                     dbc.Input(
                                                         id="bonferroni",
+                                                        placeholder="0.01",
                                                         type="number",
                                                         min=0,
                                                         max=1,
@@ -385,6 +385,7 @@ def get_input_layout() -> dbc.Container:
                                                     dbc.Input(
                                                         id="normaltest-alpha",
                                                         type="number",
+                                                        placeholder="0.001",
                                                         min=0,
                                                         max=1,
                                                         step=0.01,
@@ -457,7 +458,7 @@ def get_input_layout() -> dbc.Container:
                                                 [
                                                     dbc.Switch(
                                                         id="condition-direction",
-                                                        value=False,
+                                                        value=True,
                                                     ),
                                                 ]
                                             ),
@@ -567,7 +568,7 @@ def help_component(target, *args, icon_size, download=None):
         )
 
     button = html.Button(
-        "🛈",
+        html.I(className="fa fa-question-circle-o"),
         id=f"{target}-help",
         style={
             "display": "inline",

@@ -137,7 +137,8 @@ def update_graph_data(genes: List[str], results_json: str):
             total_regulations["total_targets"],
             total_regulations["total_sources"],
         )
-    raise exceptions.PreventUpdate
+
+    return {}, 0, 0
 
 
 clientside_callback(
@@ -170,6 +171,23 @@ def update_detail(node: Dict[str, Any], edge: Dict[str, Any], genes: List[str]):
         return user_node_detail(node, is_center), None, None
     elif edge is not None:
         return user_edge_detail(edge), None, None
+    raise exceptions.PreventUpdate
+
+
+@callback(
+    Output(component_id="download_user_dysregnet", component_property="data"),
+    Input(component_id="btn_download_dysregnet", component_property="n_clicks"),
+    State(component_id="results", component_property="data"),
+    prevent_initial_call=True,
+)
+def download_dysregnet_results(n_clicks: int, results_json: Dict[str, str]):
+    if n_clicks > 0:
+        results = pd.DataFrame(results_json)
+        # results.columns = [tuple(c.split(",")) for c in results.columns]
+        csv_str = results.to_csv()
+
+        return dict(content=csv_str + "\n", filename="results.csv")
+
     raise exceptions.PreventUpdate
 
 

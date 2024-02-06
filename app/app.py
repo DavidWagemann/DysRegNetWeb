@@ -1,14 +1,8 @@
-import collections
 import os
 
 import dash
 import dash_bootstrap_components as dbc
-import dash_cytoscape as cyto
-import numpy as np
-import pandas as pd
-import plotly.express as px
-from dash import CeleryManager, DiskcacheManager, callback, dcc, html
-from dash.dependencies import ClientsideFunction, Input, Output, State
+from dash import CeleryManager, DiskcacheManager
 from flask import Flask
 
 if "REDIS_URL" in os.environ:

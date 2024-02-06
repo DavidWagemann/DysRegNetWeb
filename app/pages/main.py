@@ -342,7 +342,7 @@ def download_graph_png(n_clicks):
     prevent_initial_call=True,
 )
 def update_mutation_plot(elements):
-    if elements is not None:
+    if elements is not None and elements:
         return mutation_bar(elements)
     raise dash.exceptions.PreventUpdate
 
