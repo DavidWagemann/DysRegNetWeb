@@ -85,7 +85,7 @@ def get_input_layout() -> dbc.Container:
                                         html.Center(
                                             [
                                                 html.H4("Metadata", id="metadata-title", style={"display": "inline"}),
-                                                html.H4("GTEx data", id="gtexdata-title", style={"display": "none"}),
+                                                html.H4("GTEx Data", id="gtexdata-title", style={"display": "none"}),
                                                 help_component(
                                                     "metadata",
                                                     "A csv file containing meta data.",
