@@ -859,6 +859,10 @@ def run(
                         session_id,
                     )
 
+            print(results)
+            results_convert = pd.DataFrame(results)
+            results_convert.columns = [c.split(",") for c in results_convert.columns]
+            print(results_convert)
             out_layout = (get_output_layout(results),)
 
             return (
