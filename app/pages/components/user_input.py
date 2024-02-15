@@ -842,6 +842,7 @@ def run(
             with DysregnetProgress() as f:
                 f.set_max(max=len(pd.DataFrame(network)))
                 f.set_progress = set_progress
+                    
                 with redirect_stderr(new_target=f):
                     results = get_results(
                         expression,
@@ -859,11 +860,10 @@ def run(
                         session_id,
                     )
 
-            print(results)
+            
             results_convert = pd.DataFrame(results)
-            results_convert.columns = [c.split(",") for c in results_convert.columns]
-            print(results_convert)
-            out_layout = (get_output_layout(results),)
+            results_convert.columns = [tuple(c.split(",")) for c in results_convert.columns]
+            out_layout = (get_output_layout(results_convert),)
 
             return (
                 out_layout,

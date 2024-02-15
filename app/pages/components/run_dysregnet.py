@@ -57,7 +57,8 @@ def get_results(
     )
     
     # convert result to Dict[str, str]
-    result.columns = [",".join(c) for c in result.columns]
-    result = result.to_dict()
+    results = result.get_results()
+    results.columns = [",".join(c) for c in results.columns]
+    results = results.to_dict()
 
-    return result
+    return results
