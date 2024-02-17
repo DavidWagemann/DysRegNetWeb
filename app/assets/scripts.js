@@ -1,6 +1,6 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
-        update_graph: function(diameter_type, display_nodes, min_fraction_slider, max_regulations_slider, graph_data, compare_switch, selection_data, patient_switch) {
+        update_graph: function(diameter_type, display_nodes, min_fraction_slider, max_regulations_slider, graph_data, compare_switch,patient_switch, selection_data) {
 
 			if(Object.keys(graph_data).length != 0){
 				
@@ -9,6 +9,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 				var layout = {"name": "klay"};
 				var display = new Set();
 				var compare = "compare" in data;
+				var patient = "patient" in data;
 
 				if (display_nodes !== 'a'){
 					
@@ -85,25 +86,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 					         reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
                         }
 
-					if(patient_switch){
-						var diff = data["patient"][reg["data"]["regulation_id"]] - reg["data"]["fraction"];
-				
-						if(data["patient"][reg["data"]["regulation_id"]]){
+						
+						
+					}
+
+
+					if (patient_switch) { 
+						if (reg["data"]["regulation_id"] in data["patient"]) {
 							reg["data"]["colors"] = "red red red red";
-							reg["data"]["divide"] = "0% "+ diff*100+"% " + diff*100 + "% 100%";
-						} else {
-
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+                        } else {
 							reg["data"]["colors"] = "grey grey grey grey";
-							reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
 						}
-					}else{
-						reg["data"]["colors"] = "red red grey grey";
-						reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
 					}
-                        reg["data"]["diff"] = diff * -1;
-
-
-					}
+					
 					
 					if(Object.keys(gene).length === 0){
 						nr += 1;
