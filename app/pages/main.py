@@ -190,8 +190,9 @@ def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_i
                 cancer_id_input,
                 patient_specific,
             )
-            if len(patient_data) >= 1: print("PATIENT DATA", patient_data)
-            store_graph["patient"] = patient_data
+
+            store_graph["patient"] = {regulation[0]: regulation[2] for regulation in patient_data}
+            print("PATIENT DATA", store_graph["patient"])
 
         if compare_cancer is not None:
             compare_data = db.get_fraction_map(
@@ -202,6 +203,7 @@ def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_i
                 compare_cancer,
             )
             store_graph["compare"] = compare_data
+            
         return (
             store_graph,
             total_regulations["total_targets"],
