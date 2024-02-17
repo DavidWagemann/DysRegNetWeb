@@ -13,7 +13,7 @@ cache = Cache(app.server, config={
     'CACHE_KEY_PREFIX': 'DysRegNet_'
 })
 
-# r = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
+# cache = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 
 # def dummy_hash_method():
 #     # this assersts session_id is available in scope

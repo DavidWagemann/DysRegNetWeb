@@ -72,7 +72,7 @@ def get_results(session_id: str, *args) -> pd.DataFrame:
         )
 
         # convert result to Dict[str, str]
-        results = result.run_dysregnet()
+        results = result.get_results()
         results.columns = [",".join(c) for c in results.columns]
         results = results.to_dict()
 
