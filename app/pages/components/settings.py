@@ -84,7 +84,7 @@ def get_settings():
                     dbc.Switch(
                     id="patient_switch",
                     label="Display patient specific data",
-                    value=True,
+                    value=False,
                 )
                 ]
             ),
