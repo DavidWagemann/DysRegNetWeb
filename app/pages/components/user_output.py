@@ -119,7 +119,7 @@ def update_gene_input(
         component_property="children",
     ),
     Input(component_id="user_gene_id_input", component_property="value"),
-    State(component_id="results", component_property="data"),
+    State(component_id="session_id", component_property="data"),
     prevent_initial_call=True,
 )
 def update_graph_data(genes: List[str], results_json: str):
@@ -177,7 +177,7 @@ def update_detail(node: Dict[str, Any], edge: Dict[str, Any], genes: List[str]):
 @callback(
     Output(component_id="download_user_dysregnet", component_property="data"),
     Input(component_id="btn_download_dysregnet", component_property="n_clicks"),
-    State(component_id="results", component_property="data"),
+    State(component_id="session_id", component_property="data"),
     prevent_initial_call=True,
 )
 def download_dysregnet_results(n_clicks: int, results_json: Dict[str, str]):
@@ -194,7 +194,7 @@ def download_dysregnet_results(n_clicks: int, results_json: Dict[str, str]):
 @callback(
     Output(component_id="download_user_graph_full", component_property="data"),
     Input(component_id="btn_download_user_graph_full", component_property="n_clicks"),
-    State(component_id="results", component_property="data"),
+    State(component_id="session_id", component_property="data"),
     State(component_id="user_gene_id_input", component_property="value"),
     prevent_initial_call=True,
 )
@@ -292,7 +292,7 @@ def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[st
     ),
     State(component_id="user_graph", component_property="elements"),
     State(component_id="user_gene_id_input", component_property="value"),
-    State(component_id="results", component_property="data"),
+    State(component_id="session_id", component_property="data"),
     prevent_initial_call=True,
 )
 def update_dysregulation_plot(

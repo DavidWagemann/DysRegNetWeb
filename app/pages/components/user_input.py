@@ -767,7 +767,8 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
     Output("user-main", "children"),
     Output("errorbox", "children", allow_duplicate=True),
     Output("errorbox", "style", allow_duplicate=True),
-    Output("results", "data"),
+    Output("session_id", "data"),
+    # Output("session_id", "inputs"), # TODO return caching of DysRegnet parameters by session-id 
     inputs=[
         Input("run", "n_clicks"),
         State("condition", "value"),

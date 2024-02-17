@@ -14,6 +14,6 @@ layout = html.Div([
             id="user-main",
             style={"margin": "5px", "padding": "0px"},
         ),
-        dash.dcc.Store(id="results", storage_type="memory"),
+        dash.dcc.Store(id="session_id", storage_type="memory"),
     ])
 

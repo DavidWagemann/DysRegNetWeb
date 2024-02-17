@@ -40,7 +40,7 @@ def get_results(
     Returns:
         pd.DataFrame: The DysRegNet analysis results.
     """
-    
+
     result = dysregnet.run(
         expression_data=pd.DataFrame(expression),
         meta=pd.DataFrame(meta),
@@ -55,7 +55,7 @@ def get_results(
         normaltest_alpha=normaltest_alpha,  # = 1e-3
         direction_condition=condition_direction,
     )
-    
+
     # convert result to Dict[str, str]
     results = result.get_results()
     results.columns = [",".join(c) for c in results.columns]
