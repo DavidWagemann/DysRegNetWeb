@@ -18,6 +18,7 @@ from pages.components.plots import blank_fig, dysregulation_heatmap
 from pages.components.popovers import get_popovers
 from pages.components.settings import get_user_settings
 from pages.components.tabs import user_data_tabs
+from pages.components.run_dysregnet import get_results
 
 
 def get_output_layout(results: pd.DataFrame) -> dbc.Container:
@@ -119,12 +120,12 @@ def update_gene_input(
         component_property="children",
     ),
     Input(component_id="user_gene_id_input", component_property="value"),
-    State(component_id="session_id", component_property="data"),
+    State(component_id="session_id", component_property="value"),
     prevent_initial_call=True,
 )
-def update_graph_data(genes: List[str], results_json: str):
+def update_graph_data(genes: List[str], session_id: str):
     if len(genes) > 0:
-        results = pd.DataFrame(results_json)
+        results = pd.DataFrame(get_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
         sources = get_sources(results, genes)
@@ -177,12 +178,12 @@ def update_detail(node: Dict[str, Any], edge: Dict[str, Any], genes: List[str]):
 @callback(
     Output(component_id="download_user_dysregnet", component_property="data"),
     Input(component_id="btn_download_dysregnet", component_property="n_clicks"),
-    State(component_id="session_id", component_property="data"),
+    State(component_id="session_id", component_property="value"),
     prevent_initial_call=True,
 )
-def download_dysregnet_results(n_clicks: int, results_json: Dict[str, str]):
+def download_dysregnet_results(n_clicks: int, session_id):
     if n_clicks > 0:
-        results = pd.DataFrame(results_json)
+        results = pd.DataFrame(get_results(session_id))
         # results.columns = [tuple(c.split(",")) for c in results.columns]
         csv_str = results.to_csv()
 
@@ -194,13 +195,13 @@ def download_dysregnet_results(n_clicks: int, results_json: Dict[str, str]):
 @callback(
     Output(component_id="download_user_graph_full", component_property="data"),
     Input(component_id="btn_download_user_graph_full", component_property="n_clicks"),
-    State(component_id="session_id", component_property="data"),
+    State(component_id="session_id", component_property="value"),
     State(component_id="user_gene_id_input", component_property="value"),
     prevent_initial_call=True,
 )
-def download_graph_full(n_clicks: int, results_json: Dict[str, str], genes: List[str]):
+def download_graph_full(n_clicks: int, session_id: str, genes: List[str]):
     if n_clicks > 0 and len(genes) != 0:
-        results = pd.DataFrame(results_json)
+        results = pd.DataFrame(get_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
         sources = get_sources(results, genes)
@@ -292,15 +293,15 @@ def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[st
     ),
     State(component_id="user_graph", component_property="elements"),
     State(component_id="user_gene_id_input", component_property="value"),
-    State(component_id="session_id", component_property="data"),
+    State(component_id="session_id", component_property="value"),
     prevent_initial_call=True,
 )
 def update_dysregulation_plot(
-    n_clicks: int, elements, genes: List[str], results_json: str
+    n_clicks: int, elements, genes: List[str], session_id: str
 ):
     if n_clicks > 0 and elements is not None:
         if len(genes) > 0:
-            results = pd.DataFrame(results_json)
+            results = pd.DataFrame(get_results(session_id))
             results.columns = [c.replace(",", ":") for c in results.columns]
 
             regulation_ids = [

@@ -15,7 +15,17 @@ cache = Cache(app.server, config={
 
 # r = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 
-def get_data(session_id):
-
-    if 'DysRegNet_' + session_id in cache.cache._cache:
-        return cache.get('DysRegNet_' + session_id)
+# def dummy_hash_method():
+#     # this assersts session_id is available in scope
+#     return session_id
+#
+#
+# def get_data(session_id):
+#     """
+#     Function to get cached DysRegNet result data based on session_id.
+#     """
+#
+#     if cache.has('DysRegNet_' + str(session_id)):
+#         return cache.get('DysRegNet_' + str(session_id))
+#     else:
+#         raise RuntimeError("Missing session_id: " + str(session_id))

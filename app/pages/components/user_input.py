@@ -767,8 +767,8 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
     Output("user-main", "children"),
     Output("errorbox", "children", allow_duplicate=True),
     Output("errorbox", "style", allow_duplicate=True),
-    Output("session_id", "data"),
-    # Output("session_id", "inputs"), # TODO return caching of DysRegnet parameters by session-id 
+    Output("session_id", "value"),
+    # Output("session_id", "inputs"), # TODO return caching of DysRegnet parameters by session-id
     inputs=[
         Input("run", "n_clicks"),
         State("condition", "value"),
@@ -843,7 +843,7 @@ def run(
             with DysregnetProgress() as f:
                 f.set_max(max=len(pd.DataFrame(network)))
                 f.set_progress = set_progress
-                    
+
                 with redirect_stderr(new_target=f):
                     results = get_results(
                         expression,
@@ -861,7 +861,7 @@ def run(
                         session_id,
                     )
 
-            
+
             results_convert = pd.DataFrame(results)
             results_convert.columns = [tuple(c.split(",")) for c in results_convert.columns]
             out_layout = (get_output_layout(results_convert),)
@@ -870,7 +870,7 @@ def run(
                 out_layout,
                 "",
                 {"display": "None"},
-                results,
+                session_id, # results
             )
         except Exception as e:
             return (
