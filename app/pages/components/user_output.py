@@ -18,7 +18,7 @@ from pages.components.plots import blank_fig, dysregulation_heatmap
 from pages.components.popovers import get_popovers
 from pages.components.settings import get_user_settings
 from pages.components.tabs import user_data_tabs
-from pages.components.run_dysregnet import get_results
+from pages.components.dysregnet_cache import cache, get_results
 
 
 def get_output_layout(results: pd.DataFrame) -> dbc.Container:
