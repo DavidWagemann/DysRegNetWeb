@@ -69,18 +69,11 @@ class ControlData:
         self.control_data = parse(join(self.control_data_dir, filename)).data_df
 
         gene_id = self.get_gene_id('Description')
-        # print(gene_id)
-        
-        # gene_symbol_id = convert_to_symbol(pd.Index(gene_id))
-
-        # # Is description symbol?
-        # if gene_symbol_id.equals(control_data['Description']):
-        #     print("Descriptoin is the symbol")
 
         self.control_data.drop(columns=['Name', 'Description'], inplace=True)
 
         # Re-index the dataframe using gene id 
-        # TODO: will it raise an error if there are duplicates?
+        # will it raise an error if there are duplicates? --- No
         self.control_data.index = gene_id
         
         # Gene ids are not unique
@@ -88,23 +81,22 @@ class ControlData:
             print("Reduce duplicate IDs ......")
             self.control_data = self.control_data.loc[~self.control_data.index.duplicated(keep='first')]
             # print(gene_id[gene_id.duplicated()])
+
             # raise ValueError("Duplicate index")
-
-
 
     def filter_control_data(self, genes: pd.Index):
         try:
             # Index rows of genes and transpose to make genes columns
-            # TODO: make sure genes in the same order as in user data (done)
+            # make sure genes in the same order as in user data
 
             # Genes that control data don't have
             genes_not_exit = genes.difference(self.control_data.index)
 
             # With this, KeyError should not occurr with .loc
             if ~(genes_not_exit.empty):
-                print("Complete genes list: ", len(genes))
+                print("Complete genes list (count): ", len(genes))
                 genes = genes.intersection(self.control_data.index)
-                print("Genes in intersection: ", len(genes))
+                print("Genes in intersection (count): ", len(genes))
 
             # symbol id as index
             self.control_data = self.control_data.loc[genes].T.astype(float)
@@ -117,7 +109,6 @@ class ControlData:
             
             return genes_not_exit
 
-        # Do not use control data if not every gene in user data exists in the control data set
         except KeyError:
             self.control_data = None
             print("Not every gene in user data exists in the selected control data set")
