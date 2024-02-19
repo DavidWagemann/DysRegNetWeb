@@ -633,7 +633,7 @@ def show_dropdown_options(
                     [],
                     [],
                     [],
-                    "Error: Gene names in expression and meta data do not match",
+                    "Error: Sample names in expression and meta data do not match",
                     {"display": "block"},
                     {"display": "None"},
                     dash.no_update,
@@ -859,6 +859,8 @@ def run(
                     )
 
             out_layout = (get_output_layout(results),)
+
+            print("test")
 
             results.columns = results.columns = [",".join(c) for c in results.columns]
             return (
