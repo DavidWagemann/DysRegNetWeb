@@ -1,3 +1,7 @@
+# ignore DB data
 data/
+
+# ignore IDE data and caches
 .idea/
 **/__pycache__/
+cache/*

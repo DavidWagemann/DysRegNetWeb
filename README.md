@@ -28,6 +28,7 @@ Install the required dependencies using pip
 ``` bash
 pip install -r app/requirements.txt
 ```
+Please note that we are running a cutom version of the [cmapPy package](https://pypi.org/project/cmapPy/), which can be found at https://github.com/LanOuyang/cmapPy_custom.git. Reason for this was a string to float conversion error.
 
 Launch the app
 ``` bash
@@ -50,12 +51,48 @@ docker run -it --rm \
     --env NEO4J_AUTH=neo4j/12345678 \
     neo4j:5.11.0
 ```
+If you have user permission problems connected to `--user=$(id -u):$(id -g)`, consider omitting this.
+Also, the container can be run in the background using `-d`.
+``` bash
+docker run -it --rm -d \
+    --name dysregnet-neo4j \
+    -p 7474:7474 -p 7687:7687 \
+    -v ${PWD}/data:/data \
+    --env NEO4J_AUTH=neo4j/12345678 \
+    neo4j:5.11.0
+```
+
+### Launching the in-menory session cache
+The app [caches session data](https://dash.plotly.com/background-callback-caching) using Celery as a broker and a [Redis](https://redis.io/docs/) database.
+Now start the [Redis docker official image](https://www.docker.com/blog/how-to-use-the-redis-docker-official-image/) in a similar fashion to the Neo4j container.
+``` bash
+docker run -it --rm -d \
+    --name dysregnet-redis \
+    -p 6379:6379 \
+    redis:7.2.4
+```
+Alternatively, you can also specify the exposed redis IP more directly using e.g. `-p 127.0.0.1:6379:6379/tcp`.
+Afterwards, export the IP address in the shell you are calling `python app/app.py` from.
+``` bash
+export REDIS_URL="redis://127.0.0.1:6379"
+```
+Importantly, you need to export the relative path to the GTEx folder for celery:
+``` bash
+export GTEX_CONTROL_DATA='../GTEx-data/'
+```
+Now we need to lauch celery worker(s) in a new terminal from the location of `app.py`.
+Keep in mind to use the conda environment to ensure the same software is called from terminal and the dash app.
+For the celery command we need to specify which celery instance we are referring to.
+That is, the variable name of our Celery instance in `app.py` (in our case `celery_broker`).
+``` bash
+celery --app app:celery_broker worker --loglevel=INFO --concurrency=2
+```
+For the background callback to work on long callback tasks, please use `python app = dash.get_app()` and `python @app.callback` when implementing new time consuming callbacks in dash.
+By the way, if you use printouts for debugging, they will appear in the terminal running celery. 
 
 ### Test for production
 Run docker compose inside the repository folder
 ``` bash
 docker compose up -d
 ```
-
-
 

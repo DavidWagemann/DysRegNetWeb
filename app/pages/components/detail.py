@@ -149,3 +149,91 @@ def edge_detail(edge, cancer_id, compare, compare_cancer):
         className="mb-3",
     )
     return detail_card
+
+
+def user_node_detail(node, is_center):
+    if is_center:
+        children = [html.I(className="fa fa-minus mr-1"), " Remove from query"]
+        color = "danger"
+        value = "remove"
+    else:
+        children = [html.I(className="fa fa-plus mr-1"), " Add to query"]
+        color = "success"
+        value = "add"
+
+    detail_card = dbc.Card(
+        dbc.CardBody(
+            [
+                heading_with_info("Gene", "gene_info"),
+                get_gene_popover(),
+                dbc.Row(
+                    [
+                        html.Label(f"Gene: "),
+                        html.Label(node["id"], id="detail_selected_gene"),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dbc.Button(
+                            [
+                                html.I(className="fa fa-crosshairs mr-1"),
+                                " Choose as query",
+                            ],
+                            outline=True,
+                            color="primary",
+                            className="me-1",
+                            value=node["id"],
+                            id="user_center_button",
+                            n_clicks=0,
+                        ),
+                        dbc.Button(
+                            children,
+                            outline=True,
+                            color=color,
+                            className="me-1",
+                            value=value,
+                            id="user_center_add_button",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="d-grid gap-2 d-md-flex",
+                    style={"marginTop": "10px"},
+                ),
+            ]
+        ),
+        className="mb-3",
+    )
+
+    return detail_card
+
+
+def user_edge_detail(edge):
+    detail_card = dbc.Card(
+        dbc.CardBody(
+            [
+                dbc.Row(
+                    heading_with_info(
+                        f'Regulation ({"Activation" if edge["classes"] == "a" else "Repression"})',
+                        "regulation_info",
+                    )
+                ),
+                get_regulation_popover(),
+                dbc.Row(html.Label(f"Source: {edge['source']}")),
+                dbc.Row(html.Label(f"Target: {edge['target']}")),
+                dbc.Row(
+                    html.Div(
+                        [
+                            html.Label(
+                                f"Fraction of dysregulated patients:",
+                                style={"marginRight": "10px"},
+                            ),
+                            html.Label(edge["fraction"], style={"color": "red"}),
+                        ],
+                        style={"display": "flex"},
+                    )
+                ),
+            ]
+        ),
+        className="mb-3",
+    )
+    return detail_card

@@ -28,6 +28,14 @@ def get_neighborhood(graph_map_list):
     regulations = remove_adjacent_duplicates(regulations)
 
     print(
+        {"center": center, "regulations": regulations},
+        {
+            "total_sources": size_sources,
+            "total_targets": size_targets,
+        },
+    )
+
+    print(
         f"Sources: {len(sources)}/{size_sources}, Targets: {len(targets)}/{size_targets}, Total return: {len(regulations)}"
     )
     return {"center": center, "regulations": regulations}, {

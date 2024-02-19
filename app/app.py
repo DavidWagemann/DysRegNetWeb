@@ -1,15 +1,30 @@
-import collections
 import os
 
 import dash
 import dash_bootstrap_components as dbc
-import dash_cytoscape as cyto
-import numpy as np
-import pandas as pd
-import plotly.express as px
-from dash import dcc, html
-from dash.dependencies import ClientsideFunction, Input, Output, State
+from dash import CeleryManager, DiskcacheManager
 from flask import Flask
+
+if "REDIS_URL" in os.environ:
+    # Use Redis & Celery if REDIS_URL set as an env variable
+    print("Using REDIS_URL: ", os.environ["REDIS_URL"])
+    
+    from celery import Celery
+
+    celery_broker = Celery(
+        __name__, broker=os.environ["REDIS_URL"], backend=os.environ["REDIS_URL"]
+    )
+    background_callback_manager = CeleryManager(celery_broker)
+
+else:
+    # Hard coded Redis url for non-production apps when developing locally
+    REDIS_URL = "redis://127.0.0.1:6379"
+    print("No REDIS_URL environment variable.\nUsing ", REDIS_URL, " (hard coded) instead")
+    
+    from celery import Celery
+
+    celery_broker = Celery(__name__, broker=REDIS_URL, backend=REDIS_URL)
+    background_callback_manager = CeleryManager(celery_broker)
 
 FONT_AWESOME = (
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
@@ -22,7 +37,8 @@ app = dash.Dash(
     server=server,
     title="DysRegNet",
     external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME],
-    # requests_pathname_prefix=os.getenv("SUBDOMAIN", "/"),
+    requests_pathname_prefix=os.getenv("SUBDOMAIN", "/"),
+    background_callback_manager=background_callback_manager,
     use_pages=True,
 )
 

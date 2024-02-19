@@ -10,7 +10,7 @@ import pages.components.neo4j2csv as neo4j2csv
 import pages.components.neo4j2Store as neo4j2Store
 from pages.components.db import NetworkDB
 from pages.components.detail import detail, edge_detail, node_detail
-from pages.components.graph import graph
+from pages.components.graph import get_graph
 from pages.components.plots import (
     dysregulation_heatmap,
     methylation_heatmap,
@@ -19,6 +19,8 @@ from pages.components.plots import (
 from pages.components.popovers import get_cancer_map, get_popovers
 from pages.components.settings import get_settings
 from pages.components.tabs import tabs
+
+from pages.components.plots import blank_fig
 
 dash.register_page(__name__, path="/")
 
@@ -77,7 +79,7 @@ layout = html.Div(
         dbc.Row(
             [
                 dbc.Col(get_settings(), xs=12, sm=12, md=12, lg=3, xl=3, xxl=2),
-                dbc.Col([graph], xs=12, sm=12, md=12, lg=9, xl=9, xxl=5),
+                dbc.Col([get_graph("graph")], xs=12, sm=12, md=12, lg=9, xl=9, xxl=5),
                 dbc.Col([detail, tabs], xs=12, sm=12, md=12, lg=12, xl=12, xxl=5),
             ],
             style={"marginTop": "15px", "marginBottom": "10px", "height": "85vh"},
@@ -167,16 +169,25 @@ def update_patient_specific_options(selected_cancer_id):
     return dropdown_options, default_value
 
 @callback(
-    Output(component_id="store_graph", component_property="data"),
-    Output(component_id="total_targets", component_property="children"),
-    Output(component_id="total_sources", component_property="children"),
+    Output(component_id="store_graph", component_property="data", allow_duplicate=True),
+    Output(
+        component_id="total_targets",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Output(
+        component_id="total_sources",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="store_selection", component_property="data"),
     Input(component_id="compare_cancer", component_property="value"),
     Input(component_id="patient_specific", component_property="value"),
     Input(component_id="cancer_id_input", component_property="value"),
+    prevent_initial_call=True,
 )
 def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_id_input):
-    if len(selection_data["gene_ids"]) != 0 and selection_data["cancer_id"] != "":
+    if len(selection_data["gene_ids"]) > 0 and selection_data["cancer_id"] != "":
         graph_data = db.get_neighborhood_multi(
             selection_data["gene_ids"], selection_data["cancer_id"]
         )
@@ -213,7 +224,7 @@ def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_i
 
 
 @callback(
-    Output(component_id="detail", component_property="children"),
+    Output(component_id="detail", component_property="children", allow_duplicate=True),
     Output(component_id="graph", component_property="tapNodeData"),
     Output(component_id="graph", component_property="tapEdgeData"),
     Input(component_id="graph", component_property="tapNodeData"),
@@ -221,6 +232,7 @@ def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_i
     State(component_id="store_selection", component_property="data"),
     State(component_id="store_compare", component_property="data"),
     State(component_id="compare_cancer", component_property="value"),
+    prevent_initial_call=True,
 )
 def update_detail(node, edge, selection_data, compare, compare_cancer):
     if selection_data is not None:
@@ -355,7 +367,7 @@ def download_graph_png(n_clicks):
     prevent_initial_call=True,
 )
 def update_mutation_plot(elements):
-    if elements is not None:
+    if elements is not None and elements:
         return mutation_bar(elements)
     raise dash.exceptions.PreventUpdate
 
@@ -370,14 +382,19 @@ def update_mutation_plot(elements):
 def update_methylation_plot(n_clicks, selection_data):
     if (
         n_clicks > 0
-        and len(selection_data["gene_ids"]) != 0
         and selection_data["cancer_id"] != ""
     ):
-        data = db.get_methylation(
-            list(selection_data["gene_ids"]), selection_data["cancer_id"]
-        )
-        if len(data) > 0:
-            return methylation_heatmap(data), [
+        if len(selection_data["gene_ids"]) > 0:
+            data = db.get_methylation(
+                list(selection_data["gene_ids"]), selection_data["cancer_id"]
+            )
+            if len(data) > 0:
+                return methylation_heatmap(data), [
+                    html.I(className="fa fa-refresh mr-1"),
+                    " Refresh",
+                ]
+        else:
+            return blank_fig(), [
                 html.I(className="fa fa-refresh mr-1"),
                 " Refresh",
             ]
@@ -397,17 +414,24 @@ def update_dysregulation_plot(n_clicks, elements, selection_data):
     if (
         n_clicks > 0
         and elements is not None
-        and len(selection_data["gene_ids"]) != 0
         and selection_data["cancer_id"] != ""
     ):
-        regulation_ids = [
-            element["data"]["regulation_id"]
-            for element in elements
-            if "regulation_id" in element["data"]
-        ]
-        data = db.get_dysregulation(regulation_ids, selection_data["cancer_id"])
-        if len(data) > 0:
-            return dysregulation_heatmap(data), [
+        if len(selection_data["gene_ids"]) > 0:
+            regulation_ids = [
+                element["data"]["regulation_id"]
+                for element in elements
+                if "regulation_id" in element["data"]
+            ]
+            data = db.get_dysregulation(regulation_ids, selection_data["cancer_id"])
+
+            if len(data) > 0:
+                return dysregulation_heatmap(data), [
+                    html.I(className="fa fa-refresh mr-1"),
+                    " Refresh",
+                ]
+
+        else:
+            return blank_fig(), [
                 html.I(className="fa fa-refresh mr-1"),
                 " Refresh",
             ]

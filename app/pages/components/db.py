@@ -63,6 +63,7 @@ class NetworkDB:
                     ),
                 }
             )
+        print(query_map_list)
         start = time.time()
         result_map_list = self.get_data_map_list(query_map_list)
         print("Neighborhood transaction time: " + str(time.time() - start))
