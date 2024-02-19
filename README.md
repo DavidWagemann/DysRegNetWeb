@@ -28,6 +28,7 @@ Install the required dependencies using pip
 ``` bash
 pip install -r app/requirements.txt
 ```
+Please note that we are running a cutom version of the [cmapPy package](https://pypi.org/project/cmapPy/), which can be found at https://github.com/LanOuyang/cmapPy_custom.git. Reason for this was a string to float conversion error.
 
 Launch the app
 ``` bash
@@ -75,6 +76,10 @@ Afterwards, export the IP address in the shell you are calling `python app/app.p
 ``` bash
 export REDIS_URL="redis://127.0.0.1:6379"
 ```
+Importantly, you need to export the relative path to the GTEx folder for celery:
+``` bash
+export GTEX_CONTROL_DATA='../GTEx-data/'
+```
 Now we need to lauch celery worker(s) in a new terminal from the location of `app.py`.
 Keep in mind to use the conda environment to ensure the same software is called from terminal and the dash app.
 For the celery command we need to specify which celery instance we are referring to.
@@ -90,6 +95,4 @@ Run docker compose inside the repository folder
 ``` bash
 docker compose up -d
 ```
-
-
 

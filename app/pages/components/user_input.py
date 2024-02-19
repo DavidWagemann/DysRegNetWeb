@@ -1016,19 +1016,19 @@ def show_dropdown_options(
         meta_df = pd.DataFrame(meta_data)
 
     network_df = pd.DataFrame(network_data)
-    if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
-        return (
-            [],
-            [],
-            [],
-            "Error: Sample names in expression and meta data do not match",
-            {"display": "block"},
-            {"display": "None"},
-            dash.no_update,
-            {},
-            {},
-            {},
-        )
+    # if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
+    #     return (
+    #         [],
+    #         [],
+    #         [],
+    #         "Error: Sample names in expression and meta data do not match",
+    #         {"display": "block"},
+    #         {"display": "None"},
+    #         dash.no_update,
+    #         {},
+    #         {},
+    #         {},
+    #     )
 
     if not expression_df.empty and not meta_df.empty and not network_df.empty:
 
@@ -1203,13 +1203,8 @@ def run(
     """
     if n_clicks is not None:
         if toggle and control_option is not None:
-            expression_df = pd.DataFrame(expression_auto)
-            meta_df = pd.DataFrame(meta_auto)
-        else:
-            expression_df = pd.DataFrame(expression)
-            meta_df = pd.DataFrame(meta)
-
-        network_df = pd.DataFrame(network)
+            expression = expression_auto
+            meta = meta_auto
 
         session_id = str(uuid4())
         try:

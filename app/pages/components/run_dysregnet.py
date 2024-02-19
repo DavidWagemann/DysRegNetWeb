@@ -41,6 +41,9 @@ def get_results(
         pd.DataFrame: The DysRegNet analysis results.
     """
 
+    print("Entered run_dysregnet")
+    print(meta)
+
     result = dysregnet.run(
         expression_data=pd.DataFrame(expression),
         meta=pd.DataFrame(meta),
