@@ -3,7 +3,6 @@ from typing import List, Union, Dict
 import dysregnet
 import pandas as pd
 from pages.components.dysregnet_cache import cache_data
-import json
 
 def get_results(
     expression: Dict[str, Dict[str, str]],

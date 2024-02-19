@@ -35,13 +35,24 @@ Launch the app
 python app/app.py
 ```
 
-The web app is now available under http://127.0.0.1:8050/ but the database is not running yet
+The web app is now available under http://127.0.0.1:8050/ but the database is not running yet.
+Furthermore the long callback for running DysRegNet on the user_data page will also not work.
+Together with the session caching these functionalities require further back-end processes running.
 
-### Launching the database
+### Launching the back-end
+The tech stack of this application (in developement) consists of four components.
+1. a shell running the dash app
+2. a shell running Celery, which is a transaction broker
+3. a Neo4j database, provided by a docker container
+4. a Redis in-memory database, provided by another docker container
+
+![DysRegNetWeb tech stack](techstack.png)
+
+#### Neo4j database
 Open a fresh shell and navigate to the repository folder. 
 Launch the Neo4j database using [Docker](https://docs.docker.com/engine/install/ubuntu/).
-In order for this to work, the repository must include a folder called "data" containing the Neo4j database files.
-
+In order for this to work, the repository directory must include a folder called `data` containing the Neo4j database files.
+These files, have however not been added to git, due to file size.
 ``` bash
 docker run -it --rm \
     --user "$(id -u):$(id -g)" \
@@ -62,33 +73,39 @@ docker run -it --rm -d \
     neo4j:5.11.0
 ```
 
-### Launching the in-menory session cache
+#### Redis in-memory cache
 The app [caches session data](https://dash.plotly.com/background-callback-caching) using Celery as a broker and a [Redis](https://redis.io/docs/) database.
-Now start the [Redis docker official image](https://www.docker.com/blog/how-to-use-the-redis-docker-official-image/) in a similar fashion to the Neo4j container.
+The Redis database runs in the RAM and is also used to cache the parameters and results of DysRegNet calls.
+First, start the [Redis docker official image](https://www.docker.com/blog/how-to-use-the-redis-docker-official-image/) in a similar fashion to the Neo4j container.
 ``` bash
 docker run -it --rm -d \
     --name dysregnet-redis \
     -p 6379:6379 \
     redis:7.2.4
 ```
-Alternatively, you can also specify the exposed redis IP more directly using e.g. `-p 127.0.0.1:6379:6379/tcp`.
-Afterwards, export the IP address in the shell you are calling `python app/app.py` from.
+For this you can alternatively, specify the exposed Redis IP more directly using e.g. `-p 127.0.0.1:6379:6379/tcp`.
+Afterwards, export the IP address in the shell you are calling `python app/app.py` from and the shell which is running Celery.
 ``` bash
 export REDIS_URL="redis://127.0.0.1:6379"
 ```
-Importantly, you need to export the relative path to the GTEx folder for celery:
+
+#### Celery broker
+The Celery callback manager, needs to be called in a separate terminal or process from the `app` folder, which is the location of `app.py`.
+It requires the `REDIS_URL` environment variable, as well as the relative path to the GTEx folder as a second environment variable.
 ``` bash
-export GTEX_CONTROL_DATA='../GTEx-data/'
+cd app/
+export REDIS_URL="redis://127.0.0.1:6379"
+export GTEX_CONTROL_DATA="../GTEx-data/"
 ```
-Now we need to lauch celery worker(s) in a new terminal from the location of `app.py`.
 Keep in mind to use the conda environment to ensure the same software is called from terminal and the dash app.
-For the celery command we need to specify which celery instance we are referring to.
-That is, the variable name of our Celery instance in `app.py` (in our case `celery_broker`).
+For the celery command we need to specify which callback manager variable inside the dash app, we are referring to.
+In our case that is `celery_broker` in `app.py`.
 ``` bash
 celery --app app:celery_broker worker --loglevel=INFO --concurrency=2
 ```
-For the background callback to work on long callback tasks, please use `python app = dash.get_app()` and `python @app.callback` when implementing new time consuming callbacks in dash.
-By the way, if you use printouts for debugging, they will appear in the terminal running celery. 
+With a multi-page and -component app such as this, the app variable needs to be explicitly referenced in case of background callbacks.
+For this, please use `app = dash.get_app()` and `@app.callback` in/on the  respective component/page.
+By the way, if you use `print` for debugging in a component, the text will appear in the terminal running celery.
 
 ### Test for production
 Run docker compose inside the repository folder
