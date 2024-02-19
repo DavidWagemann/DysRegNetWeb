@@ -128,6 +128,7 @@ clientside_callback(
     Input(component_id="max_regulations_slider", component_property="value"),
     Input(component_id="store_graph", component_property="data"),
     Input(component_id="compare_switch", component_property="value"),
+    Input(component_id="patient_switch", component_property="value"),
     State(component_id="store_selection", component_property="data"),
 )
 
@@ -155,6 +156,15 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
             )
     raise dash.exceptions.PreventUpdate
 
+@callback(
+    Output(component_id="patient_specific", component_property="options"),
+    Output(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
+)
+def update_patient_specific_options(selected_cancer_id):
+    dropdown_options = db.get_all_patient_ids(selected_cancer_id)
+    default_value = dropdown_options[0]["value"] if dropdown_options else None
+    return dropdown_options, default_value
 
 @callback(
     Output(component_id="store_graph", component_property="data"),
@@ -162,13 +172,27 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
     Output(component_id="total_sources", component_property="children"),
     Input(component_id="store_selection", component_property="data"),
     Input(component_id="compare_cancer", component_property="value"),
+    Input(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
 )
-def update_graph_data(selection_data, compare_cancer):
+def update_graph_data(selection_data, compare_cancer, patient_specific, cancer_id_input):
     if len(selection_data["gene_ids"]) != 0 and selection_data["cancer_id"] != "":
         graph_data = db.get_neighborhood_multi(
             selection_data["gene_ids"], selection_data["cancer_id"]
         )
         store_graph, total_regulations = neo4j2Store.get_neighborhood(graph_data)
+        if patient_specific is not None:
+            patient_data = db.get_dysregulation_patient_specific(
+                [
+                    regulation[0]["data"]["regulation_id"]
+                    for regulation in store_graph["regulations"]
+                ],
+                cancer_id_input,
+                patient_specific,
+            )
+
+            store_graph["patient"] = {regulation[0]: regulation[2] for regulation in patient_data}
+            print("PATIENT DATA", store_graph["patient"])
 
         if compare_cancer is not None:
             compare_data = db.get_fraction_map(
@@ -179,6 +203,7 @@ def update_graph_data(selection_data, compare_cancer):
                 compare_cancer,
             )
             store_graph["compare"] = compare_data
+            
         return (
             store_graph,
             total_regulations["total_targets"],
