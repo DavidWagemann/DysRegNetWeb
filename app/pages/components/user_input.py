@@ -1,18 +1,24 @@
 import base64
 import io
+import time
 from contextlib import redirect_stderr
 from typing import Any, Dict, List, Literal, Tuple, Union
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import callback, dcc, html
+import dash_daq as daq
+from pandas.testing import assert_index_equal
+from dash import callback, dcc, html, ctx
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
+from pages.components.control_data import ControlData
 from uuid import uuid4
+
+control_data = ControlData()
 
 app = dash.get_app()
 
@@ -74,35 +80,64 @@ def get_input_layout() -> dbc.Container:
                     ),
                     dbc.Col(
                         [
-                            html.Center(
+                            dbc.Row(
                                 [
-                                    html.H4("Metadata", style={"display": "inline"}),
-                                    help_component(
-                                        "metadata",
-                                        "A csv file containing meta data.",
-                                        "The first column should contain samples ids and other columns for the condition and the covariates.",
-                                        icon_size="1.3rem",
-                                        download="https://figshare.com/ndownloader/files/43544802",
+                                    dbc.Col(
+                                        html.Center(
+                                            [
+                                                html.H4("Metadata", id="metadata-title", style={"display": "inline"}),
+                                                html.H4("GTEx Data", id="gtexdata-title", style={"display": "none"}),
+                                                help_component(
+                                                    "metadata",
+                                                    "A csv file containing meta data.",
+                                                    "The first column should contain samples ids and other columns for the condition and the covariates.",
+                                                    icon_size="1.3rem",
+                                                    download="https://figshare.com/ndownloader/files/43544802",
+                                                ),
+                                                help_component(
+                                                    "gtex-data",
+                                                    "Use GTex data as control data",
+                                                    "The provided meta data will not be used if an option is chosen",
+                                                    # "Column name for the condition in the meta DataFrame.",
+                                                    # "The columns should encode control samples as 0 and case samples as 1.",
+                                                    icon_size="1.3rem",
+                                                ),
+                                            ]
+                                        ),
+                                        
+                                        width={"size": 6, "offset": 3},
                                     ),
-                                ]
+                                    dbc.Col(
+                                        dbc.Container(
+                                            [
+                                                daq.ToggleSwitch(
+                                                    id='meta-toggle-switch',
+                                                    value=False,
+                                                    size=20,
+                                                    # label='Meta data|GTEx data',
+                                                    style={"display": "inline", },
+                                                ),
+                                            ],
+                                            style={"display": "inline", "margin": "2", "padding": "0"},
+                                        ),
+                                        width={"size": 3, "offset": 12},
+                                    ),
+                                ],
+                                align="center",
+
                             ),
+                            
                             dcc.Upload(
                                 id="meta",
                                 children="Drag and Drop or Select Files",
                                 accept=".csv",
-                                style={
-                                    "width": "100%",
-                                    "height": "60px",
-                                    "lineHeight": "60px",
-                                    "borderWidth": "1px",
-                                    "borderStyle": "dashed",
-                                    "borderRadius": "5px",
-                                    "textAlign": "center",
-                                    "margin": "10px",
-                                    "cursor": "pointer",
-                                },
                             ),
-                        ]
+
+                            dcc.Dropdown(
+                                id="control-option",
+                                options=control_data.get_control_data_options(),
+                            ),         
+                        ],
                     ),
                     dbc.Col(
                         [
@@ -153,7 +188,7 @@ def get_input_layout() -> dbc.Container:
                         [
                             html.Center(
                                 [
-                                    html.H4("Condition", style={"display": "inline"}),
+                                    html.H5("Condition", style={"display": "inline"}),
                                     help_component(
                                         "condition",
                                         "Column name for the condition in the meta DataFrame.",
@@ -172,7 +207,7 @@ def get_input_layout() -> dbc.Container:
                         [
                             html.Center(
                                 [
-                                    html.H4(
+                                    html.H5(
                                         "Categorical Covariates",
                                         style={"display": "inline"},
                                     ),
@@ -195,7 +230,7 @@ def get_input_layout() -> dbc.Container:
                         [
                             html.Center(
                                 [
-                                    html.H4(
+                                    html.H5(
                                         "Continuous Covariates",
                                         style={"display": "inline"},
                                     ),
@@ -468,9 +503,34 @@ def get_input_layout() -> dbc.Container:
                 backdrop="static",
                 centered=True,
             ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        dbc.ModalTitle("Missing genes in selected control data"), close_button=False
+                    ),
+                    # dbc.ModalBody("Some genes are missing"),
+                    dbc.ModalBody(id="missing_genes_list", style={"white-space": "pre-line"}),
+                    dbc.ModalFooter(
+                        dbc.Button(
+                            "Close",
+                            id="close_control_data_modal",
+                            color="success",
+                            className="mr-1",
+                            outline=True,
+                        ),
+                    ),
+                ],
+                id="control_data_modal",
+                is_open=False,
+                backdrop="static",
+                centered=True,
+                scrollable=True,
+            ),
             dash.dcc.Store(id="expression_data", storage_type="memory"),
             dash.dcc.Store(id="network_data", storage_type="memory"),
             dash.dcc.Store(id="meta_data", storage_type="memory"),
+            dash.dcc.Store(id="meta_data_autogenerated", storage_type="memory"),
+            dash.dcc.Store(id="expression_data_autogenerated", storage_type="memory"),
         ],
         id="input_layout",
     )
@@ -523,11 +583,72 @@ def help_component(target, *args, icon_size, download=None):
                 trigger="legacy",
             ),
         ],
+        id=f"{target}-help-container",
         style={"display": "inline", "margin": "0", "padding": "0"},
     )
 
     return out
 
+@callback(
+    Output("metadata-title", "style"),
+    Output("gtexdata-title", "style"),
+    Output("metadata-help-container", "style"),
+    Output("gtex-data-help-container", "style"),
+    Output("meta", "style"),
+    Output("control-option", "style"),
+    Input("meta-toggle-switch", "value"),
+)
+def change_layout_toggle(value: bool):
+    """
+    Changes the layout to dispaly metadata uploading or control data options according to toggle state.
+
+    Args:
+        value (bool): If the toggle switch is toggled or not.
+
+    Returns:
+        tuple: A tuple containing the styles of metadata uploading and gtex control data components.
+    """
+    if value:
+        return (
+            {"display":"none",},
+            {"display":"inline"},
+            {"display": "none", "margin": "0", "padding": "0"},
+            {"display": "inline", "margin": "0", "padding": "0"},
+            {
+                "width": "100%",
+                "height": "60px",
+                "lineHeight": "60px",
+                "borderWidth": "1px",
+                "borderStyle": "dashed",
+                "borderRadius": "5px",
+                "textAlign": "center",
+                "margin": "10px",
+                "cursor": "pointer",
+                "display":"none"
+                },                   
+            {"margin-top": "20px","display":"block"},
+        )
+    else:
+        return (
+            {"display":"inline"},
+            {"display":"none"},
+            {"display": "inline", "margin": "0", "padding": "0"},
+            {"display": "none", "margin": "0", "padding": "0"},
+            {
+                "width": "100%",
+                "height": "60px",
+                "lineHeight": "60px",
+                "borderWidth": "1px",
+                "borderStyle": "dashed",
+                "borderRadius": "5px",
+                "textAlign": "center",
+                "margin": "10px",
+                "cursor": "pointer",
+                "display":"block"
+                },
+            {"display":"none"},
+        )
+    
 
 @callback(
     Output("expression", "children"),
@@ -565,7 +686,282 @@ def upload_name_update(
 
     return expression_name, meta_name, network_name
 
+@callback(
+    Output("control_data_modal", "is_open", allow_duplicate=True),
+    Input("close_control_data_modal", "n_clicks"),
+    State("control_data_modal", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_modal(n: Union[int, None], is_open: bool) -> bool:
+    """
+    Turn off the modal.
 
+    Args:
+        n (int): The times that the close button is clicked.
+        is_open (bool): If the modal is open or not.
+
+    Returns:
+        is_open (bool): New state of the modal
+    """
+    if n:
+        return False
+    return is_open
+
+@callback(
+    Output("loading-options-output", "children", allow_duplicate=True),
+    Input("control-option", "value"),
+
+    background=True,
+    running=[
+        (Output("condition", "disabled"), True, False),
+        (Output("cat-cov", "disabled"), True, False),
+        (Output("con-cov", "disabled"), True, False),
+        (Output("run", "disabled"), True, True),
+    ],
+
+    prevent_initial_call=True,
+)
+def disable_button(control_option: Union[str, None]):
+    if control_option:
+        time.sleep(9.0)
+        return ""
+    
+
+@callback(
+    Output("missing_genes_list", "children"),
+    Output("control_data_modal", "is_open", allow_duplicate=True),
+    Output("expression_data_autogenerated", "data", allow_duplicate=True),
+    Output("meta_data_autogenerated", "data", allow_duplicate=True),
+    Output("loading-options-output", "children", allow_duplicate=True),
+    Output("errorbox", "children", allow_duplicate=True),
+    Output("errorbox", "style", allow_duplicate=True),
+    
+    background=True,
+
+    running=[
+        (Output("condition", "disabled"), True, False),
+        (Output("cat-cov", "disabled"), True, False),
+        (Output("con-cov", "disabled"), True, False),
+        (Output("run", "disabled"), True, True),
+    ],
+
+    inputs = [
+        Input("control-option", "value"),
+        Input("expression_data", "data"),
+    ],
+
+    prevent_initial_call=True,
+)
+def prepare_control_data(control_option: Union[str, None], expression: Dict[str, Dict[str, str]]):
+    """
+    Generate dropdown options based on the provided (or generated) expression, meta, and network data.
+
+    Args:
+        control_optoin (str): Selected tissue type of which control data is going to be prepared.
+        expression_data (Dict[str, Dict[str, str]]): User provided expression data.
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - missing_genes_message (str): A message listing genes that are not found in the gtex control data set, if any.
+            - open_modal (bool): Open the modal which shows the missing_genes_message.
+            - expression_data_auto (Dict[str, Dict[str, str]]): Expression data generated from selected control data option.
+            - meta_data_auto (Dict[str, Dict[str, str]]): Meta data generated from selected control data option.
+            - output (dash.no_update): A special value indicating that the loading-options-output should not be updated.
+            - error_message (str): An error message, if any.
+            - error_style (dict): A dictionary representing the CSS style for displaying the error message.
+    """
+    
+    if control_option is not None:
+
+        control_data.load_control_data(control_option)
+
+        expression_df = pd.DataFrame(expression)
+
+        # Original control data is indexed using genes in user expressoin data
+        # Genes in user data that do not exist in the control data are returned as a list, 
+        # which should be dropped from user expression data
+        genes_not_exist = control_data.filter_control_data(expression_df.columns[1:])
+    
+        if control_data.control_data is not None:
+
+            control_data.control_data.insert(0, expression_df.columns[0], control_data.control_data.index)
+            expression_df.drop(columns=genes_not_exist, inplace=True)
+            assert_index_equal(expression_df.columns, control_data.control_data.columns)
+
+            new_meta = {"sample":expression_df.iloc[:, 0].to_list() + control_data.control_data.iloc[:, 0].to_list(), 
+                        "condition":[1]*expression_df.shape[0] + [0]*control_data.control_data.shape[0]}
+
+            # Update `condition`, `cat-cov`, `con-cov` dropdown list options 
+            # Using the same logic as in `show_dropdown_options` function
+            meta_df = pd.DataFrame(new_meta)
+            expression_df = pd.concat([expression_df, control_data.control_data])
+
+
+            if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
+                return (
+                    "",
+                    False,
+                    dash.no_update,
+                    dash.no_update,
+                    "",
+                    "Error: Gene names in expression and meta data do not match",
+                    {"display": "block"}
+                )
+
+            # Display missing genes in dialog box
+            if ~genes_not_exist.empty:
+                return (
+                    '''The following genes are missing in the selected control data set 
+                        (also dropped in the provided expression data):\n''' + ",\n".join(genes_not_exist),
+                    True,
+                    expression_df.to_dict(),
+                    new_meta,
+                    "",
+                    "",
+                    {"display": "none"}
+                )
+            
+            return (
+                    "",
+                    False,
+                    expression_df.to_dict(),
+                    new_meta,
+                    "",
+                    "",
+                    {"display": "none"}
+                )
+
+        else:
+            assert_index_equal(pd.Index(genes_not_exist), expression_df.columns[1:])
+
+            return (
+                '''The selected control data set cannot be used with the provided data:\n
+                all genes do not exist in the control data''',
+                True,
+                dash.no_update,
+                dash.no_update,
+                "",
+                "",
+                {"display": "none"}
+            )
+        
+    else:
+        raise dash.exceptions.PreventUpdate
+    
+@callback(
+    Output("errorbox", "children", allow_duplicate=True),
+    Output("errorbox", "style", allow_duplicate=True),
+    Output("expression_data", "data"),
+    Input("expression", "contents"),
+    prevent_initial_call=True,
+)
+def load_expression_data(expression: Union[str, None]):
+    """
+    Stores expression dataframes in global variables for generating dropdown options and use in the dysregnet run callback.
+
+    Args:
+        expression (str): Base64 encoded expression data.
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - error_message (str): An error message, if any.
+            - error_style (Dict): A dictionary representing the CSS style for displaying the error message.
+            - expression_data (Dict[str, Dict[str, str]])
+    """
+    try:
+        expression_df = pd.read_csv(
+            io.StringIO(
+                base64.b64decode(expression.split(",")[1] + "===").decode("utf-8")
+            ),
+        )
+        return ("", {"display": "none"}, expression_df.to_dict())
+    
+    except Exception as e:
+            return (
+                f"Error: Something went wrong ({e})",
+                {"display": "block"},
+                {},
+            )
+    
+@callback(
+    Output("errorbox", "children", allow_duplicate=True),
+    Output("errorbox", "style", allow_duplicate=True),
+    Output("meta_data", "data"),
+    Input("meta", "contents"),
+    prevent_initial_call=True,
+)
+def load_meta_data(meta: Union[str, None]):
+    """
+    Stores metadata dataframes in global variables for generating dropdown options and use in the dysregnet run callback.
+
+    Args:
+        metadata (str): Base64 encoded metadata data.
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - error_message (str): An error message, if any.
+            - error_style (Dict): A dictionary representing the CSS style for displaying the error message.
+            - metadata_data (Dict[str, Dict[str, str]])
+    """
+    try:
+        meta_df = pd.read_csv(
+            io.StringIO(
+                base64.b64decode(meta.split(",")[1] + "===").decode("utf-8")
+            ),
+        )
+        return ("", {"display": "none"}, meta_df.to_dict())
+    
+    except Exception as e:
+            return (
+                f"Error: Something went wrong ({e})",
+                {"display": "block"},
+                {},
+            )
+    
+@callback(
+    Output("errorbox", "children", allow_duplicate=True),
+    Output("errorbox", "style", allow_duplicate=True),
+    Output("network_data", "data"),
+    Input("network", "contents"),
+    prevent_initial_call=True,
+)
+def load_network_data(network: Union[str, None]):
+    """
+    Stores network dataframes in global variables for generating dropdown options and use in the dysregnet run callback.
+
+    Args:
+        network (str): Base64 encoded network data.
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - error_message (str): An error message, if any.
+            - error_style (Dict): A dictionary representing the CSS style for displaying the error message.
+            - network_data (Dict[str, Dict[str, str]])
+    """
+    try:
+        network_df = pd.read_csv(
+            io.StringIO(
+                base64.b64decode(network.split(",")[1] + "===").decode("utf-8")
+            ),
+        )
+
+        if len(network_df.columns) != 2:
+            return (
+                "Error: Network file must have exactly two columns",
+                {"display": "block"},
+                dash.no_update
+            )
+        
+        return ("", {"display": "none"}, network_df.to_dict())
+    
+    except Exception as e:
+            return (
+                f"Error: Something went wrong ({e})",
+                {"display": "block"},
+                {},
+            )
+
+    
 @callback(
     Output("condition", "options"),
     Output("cat-cov", "options"),
@@ -574,33 +970,33 @@ def upload_name_update(
     Output("errorbox", "style", allow_duplicate=True),
     Output("select-cols", "style"),
     Output("loading-options-output", "children"),
-    Output("expression_data", "data"),
-    Output("network_data", "data"),
-    Output("meta_data", "data"),
-    Input("expression", "contents"),
-    Input("meta", "contents"),
-    Input("network", "contents"),
+
+    Input("expression_data", "data"),
+    Input("meta_data", "data"),
+    Input("network_data", "data"),
+    Input("expression_data_autogenerated", "data"),
+    Input("meta_data_autogenerated", "data"),
+    Input("meta-toggle-switch", "value"),
+
     prevent_initial_call=True,
 )
 def show_dropdown_options(
-    expression: Union[str, None], meta: Union[str, None], network: Union[str, None]
-) -> Tuple[
-    Union[List[str], List[Dict[str, str]]],
-    Union[List[str], List[Dict[str, str]]],
-    Union[List[str], List[Dict[str, str]]],
-    Union[NoUpdate, str],
-    Dict[str, str],
-    Dict[str, str],
-    Union[NoUpdate, Literal[""]],
-]:
+    expression_data: Dict[str, Dict[str, str]],
+    meta_data: Dict[str, Dict[str, str]],
+    network_data: Dict[str, Dict[str, str]],
+    expression_data_auto: Dict[str, Dict[str, str]],
+    meta_data_auto: Dict[str, Dict[str, str]],
+    toggle: bool
+):
     """
-    Generate dropdown options based on the provided expression, meta, and network data.
-    Stores expression, meta, and network dataframes in global variables for use in the dysregnet run callback.
+    Generate dropdown options based on the provided (or generated) expression, meta, and network data.
 
     Args:
-        expression (str): Base64 encoded expression data.
-        meta (str): Base64 encoded meta data.
-        network (str): Base64 encoded network data.
+        expression_data (Dict[str, Dict[str, str]]): User provided expression data.
+        meta_data (Dict[str, Dict[str, str]]): User provided meta data.
+        network_data (Dict[str, Dict[str, str]]): User provided network data.
+        expression_data_auto (Dict[str, Dict[str, str]]): Expression data generated from selected control data option.
+        meta_data_auto (Dict[str, Dict[str, str]]): Meta data generated from selected control data option.
 
     Returns:
         tuple: A tuple containing the following elements:
@@ -612,115 +1008,75 @@ def show_dropdown_options(
             - loading_style (dict): A dictionary representing the CSS style for displaying the loading spinner.
             - output (dash.no_update): A special value indicating that the loading-options-output should not be updated.
     """
-    if expression is not None and meta is not None and network is not None:
-        try:
-            expression_df = pd.read_csv(
-                io.StringIO(
-                    base64.b64decode(expression.split(",")[1] + "===").decode("utf-8")
-                ),
-            )
-            meta_df = pd.read_csv(
-                io.StringIO(
-                    base64.b64decode(meta.split(",")[1] + "===").decode("utf-8")
-                ),
-            )
-            network_df = pd.read_csv(
-                io.StringIO(
-                    base64.b64decode(network.split(",")[1] + "===").decode("utf-8")
-                )
-            )
+    if toggle:
+        expression_df = pd.DataFrame(expression_data_auto)
+        meta_df = pd.DataFrame(meta_data_auto)
+    else:
+        expression_df = pd.DataFrame(expression_data)
+        meta_df = pd.DataFrame(meta_data)
 
-            if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
-                return (
-                    [],
-                    [],
-                    [],
-                    "Error: Sample names in expression and meta data do not match",
-                    {"display": "block"},
-                    {"display": "None"},
-                    dash.no_update,
-                    {},
-                    {},
-                    {},
-                )
+    network_df = pd.DataFrame(network_data)
+    if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
+        return (
+            [],
+            [],
+            [],
+            "Error: Sample names in expression and meta data do not match",
+            {"display": "block"},
+            {"display": "None"},
+            dash.no_update,
+            {},
+            {},
+            {},
+        )
 
-            if len(network_df.columns) != 2:
-                return (
-                    [],
-                    [],
-                    [],
-                    "Error: Network file must have exactly two columns",
-                    {"display": "block"},
-                    {"display": "None"},
-                    dash.no_update,
-                    {},
-                    {},
-                    {},
-                )
+    if not expression_df.empty and not meta_df.empty and not network_df.empty:
 
-            # TODO: check for matching gene names in expression and network
-
-            columns = list(meta_df.columns)[1:]
-
-            conditions = [
-                {"label": option, "value": option}
-                for option in columns
-                if set(meta_df[option]) == {0, 1}
-            ]
-
-            if len(conditions) == 0:
-                return (
-                    [],
-                    [],
-                    [],
-                    "Error: No binary condition found in meta data",
-                    {"display": "block"},
-                    {"display": "None"},
-                    dash.no_update,
-                    {},
-                    {},
-                    {},
-                )
-
-            covariates = [{"label": option, "value": option} for option in columns]
-            return (
-                conditions,
-                covariates,
-                covariates,
-                dash.no_update,
-                {"display": "None"},
-                {"display": "flex"},
-                "",
-                expression_df.to_dict(),
-                network_df.to_dict(),
-                meta_df.to_dict(),
-            )
-        except Exception as e:
+        if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
             return (
                 [],
                 [],
                 [],
-                f"Error: Something went wrong ({e})",
+                "Error: Gene names in expression and meta data do not match",
                 {"display": "block"},
                 {"display": "None"},
-                dash.no_update,
-                {},
-                {},
-                {},
+                dash.no_update
             )
 
-    return (
-        [],
-        [],
-        [],
-        dash.no_update,
-        {"display": "None"},
-        {"display": "None"},
-        dash.no_update,
-        {},
-        {},
-        {},
-    )
+        # TODO: check for matching gene names in expression and network
+
+        columns = list(meta_df.columns)[1:]
+
+        conditions = [
+            {"label": option, "value": option}
+            for option in columns
+            if set(meta_df[option]) == {0, 1}
+        ]
+
+        if len(conditions) == 0:
+            return (
+                [],
+                [],
+                [],
+                "Error: No binary condition found in meta data",
+                {"display": "block"},
+                {"display": "None"},
+                dash.no_update
+            )
+
+        covariates = [{"label": option, "value": option} for option in columns]
+        return (
+            conditions,
+            covariates,
+            covariates,
+            dash.no_update,
+            {"display": "None"},
+            {"display": "flex"},
+            ""
+        )
+    
+    else:
+        raise dash.exceptions.PreventUpdate
 
 
 @callback(
@@ -783,6 +1139,10 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
         State("expression_data", "data"),
         State("network_data", "data"),
         State("meta_data", "data"),
+        State("expression_data_autogenerated", "data"),
+        State("meta_data_autogenerated", "data"),
+        State("control-option", "value"),
+        State("meta-toggle-switch", "value"),
     ],
     cancel=[Input("cancel-run", "n_clicks")],
     background=True,
@@ -812,6 +1172,10 @@ def run(
     expression: Dict[str, Dict[str, str]],
     network: Dict[str, Dict[str, str]],
     meta: Dict[str, Dict[str, str]],
+    expression_auto: Dict[str, Dict[str, str]],
+    meta_auto: Dict[str, Dict[str, str]],
+    control_option: Union[str, None],
+    toggle: bool
 ) -> Union[
     Tuple[dbc.Container, Literal[""], Dict[str, str]],
     Tuple[NoUpdate, str, Dict[str, str]],
@@ -838,6 +1202,15 @@ def run(
         dict: A dictionary representing the CSS style for displaying the error message.
     """
     if n_clicks is not None:
+        if toggle and control_option is not None:
+            expression_df = pd.DataFrame(expression_auto)
+            meta_df = pd.DataFrame(meta_auto)
+        else:
+            expression_df = pd.DataFrame(expression)
+            meta_df = pd.DataFrame(meta)
+
+        network_df = pd.DataFrame(network)
+
         session_id = str(uuid4())
         try:
             with DysregnetProgress() as f:
