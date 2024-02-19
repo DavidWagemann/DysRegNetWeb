@@ -1,34 +1,46 @@
-# import dash
-# from flask_caching import Cache
+from typing import List, Union, Dict
 import redis
 import pandas as pd
 import json
 
-# app = dash.get_app()
+# TODO:
+# - implement functionality of maximum number of cached items or time limit
+# - implement sanity checks when caching or retrieving cached data
+#
+# For inspiration take flask_caching as an template:
+# https://github.com/pallets-eco/flask-caching/blob/master/src/flask_caching/__init__.py
+# However, flask_caching uses a outdated md5 hashing and we want the hash 
+# value inside redis to be basically the session ID.
+# Thus, we have decided to go with basic redis here and implement 
+# funcitonality like flask_caching afterwords.
 
-# cache = Cache(app.server, config={
-#     'CACHE_TYPE': 'redis',
-#     'CACHE_TYPE': 'RedisCache',
-#     'CACHE_REDIS_URL': 'redis://127.0.0.1',
-#     'CACHE_DEFAULT_TIMEOUT': 0,
-#     'CACHE_THRESHOLD': 3,
-#     'CACHE_KEY_PREFIX': 'DysRegNet_'
-# })
+CACHE_KEY_PREFIX = 'DysRegNet_'
 
 cache = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 
-# def dummy_hash_method():
-#     # this assersts session_id is available in scope
-#     return session_id
-#
-#
+def cache_data(session_id: str, results, parameters):
+    """
+    Function to set DysRegNet parameters and result in redis cache by session_id.
+    Args:
+        session_id (str): unique session identifier
+        results (Dict[Dict[str, str]]): string dictionary of DysRegNet results
+        parameters (Dict[str, [Dict[str, Dict[str, str]], 
+        str, List[str], bool, float, Union[float, None]]]): dict of DysRegNet 
+        parameters
+    """
+    
+    cache.set(
+        CACHE_KEY_PREFIX + session_id,
+        json.dumps({"results": results, "parameters": parameters})
+    )
+
 def get_data(session_id):
     """
     Function to get cached DysRegNet result data based on session_id.
     """
 
     if 'DysRegNet_' + str(session_id) in cache.keys():
-        return json.loads(cache.get('DysRegNet_' + str(session_id)))
+        return json.loads(cache.get(CACHE_KEY_PREFIX + str(session_id)))
     else:
         raise RuntimeError("Missing session_id: " + str(session_id))
 

@@ -2,7 +2,7 @@ from typing import List, Union, Dict
 
 import dysregnet
 import pandas as pd
-from pages.components.dysregnet_cache import cache
+from pages.components.dysregnet_cache import cache_data
 import json
 
 def get_results(
@@ -64,24 +64,21 @@ def get_results(
     results = results.to_dict()
 
     # cache input data and results
-    cache.set("DysRegNet_" + session_id,
-        json.dumps({
-            "results": results,
-            "parameters": {
-                "expression": expression,
-                "meta": meta,
-                "network": network,
-                "condition": condition,
-                "cat_cov": cat_cov,
-                "con_cov": con_cov,
-                "zscoring": zscoring,
-                "bonferroni": bonferroni,
-                "r2": r2,
-                "normaltest": normaltest,
-                "normaltest_alpha": normaltest_alpha,
-                "condition_direction": condition_direction,
-            }
-        })
+    cache_data(session_id, results, 
+        parameters = {
+            "expression": expression,
+            "meta": meta,
+            "network": network,
+            "condition": condition,
+            "cat_cov": cat_cov,
+            "con_cov": con_cov,
+            "zscoring": zscoring,
+            "bonferroni": bonferroni,
+            "r2": r2,
+            "normaltest": normaltest,
+            "normaltest_alpha": normaltest_alpha,
+            "condition_direction": condition_direction,
+        }
     )
 
     return results
