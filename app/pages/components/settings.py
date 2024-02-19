@@ -2,7 +2,8 @@ import dash_bootstrap_components as dbc
 import pages.components.parameters as parameters
 from dash import dcc, html
 from pages.components.popovers import heading_with_info, info_button
-
+from pages.components.db import NetworkDB
+db = NetworkDB()
 
 def get_settings():
     settings = [
@@ -50,6 +51,15 @@ def get_settings():
                         multi=False,
                         id="display_nodes",
                     ),
+                    html.Label("Patient Specific:"),
+                    dcc.Dropdown(
+                        #options=dropdown_options,
+                        #value=dropdown_options[0]["value"],
+                        options=[],
+                        value=None,
+                        multi=False,
+                        id="patient_specific",
+                    ),
                 ]
             ),
         ),
@@ -71,6 +81,11 @@ def get_settings():
                         label="Display dysregulation difference",
                         value=True,
                     ),
+                    dbc.Switch(
+                    id="patient_switch",
+                    label="Display patient specific data",
+                    value=False,
+                )
                 ]
             ),
             className="mt-3",
