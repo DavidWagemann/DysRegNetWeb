@@ -16,10 +16,11 @@ from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
 from pages.components.control_data import ControlData
-
+from uuid import uuid4
 
 control_data = ControlData()
 
+app = dash.get_app()
 
 def get_input_layout() -> dbc.Container:
     """
@@ -1015,6 +1016,19 @@ def show_dropdown_options(
         meta_df = pd.DataFrame(meta_data)
 
     network_df = pd.DataFrame(network_data)
+    if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
+        return (
+            [],
+            [],
+            [],
+            "Error: Sample names in expression and meta data do not match",
+            {"display": "block"},
+            {"display": "None"},
+            dash.no_update,
+            {},
+            {},
+            {},
+        )
 
     if not expression_df.empty and not meta_df.empty and not network_df.empty:
 
@@ -1105,11 +1119,12 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
     return True, "secondary"
 
 
-@callback(
+@app.callback(
     Output("user-main", "children"),
     Output("errorbox", "children", allow_duplicate=True),
     Output("errorbox", "style", allow_duplicate=True),
-    Output("results", "data"),
+    Output("session_id", "value"),
+    # Output("session_id", "inputs"), # TODO return caching of DysRegnet parameters by session-id
     inputs=[
         Input("run", "n_clicks"),
         State("condition", "value"),
@@ -1195,15 +1210,18 @@ def run(
             meta_df = pd.DataFrame(meta)
 
         network_df = pd.DataFrame(network)
+
+        session_id = str(uuid4())
         try:
             with DysregnetProgress() as f:
-                f.set_max(max=len(network_df))
+                f.set_max(max=len(pd.DataFrame(network)))
                 f.set_progress = set_progress
+
                 with redirect_stderr(new_target=f):
                     results = get_results(
-                        expression_df,
-                        meta_df,
-                        network_df,
+                        expression,
+                        meta,
+                        network,
                         condition,
                         [] if cat_cov is None else cat_cov,
                         [] if con_cov is None else con_cov,
@@ -1213,16 +1231,18 @@ def run(
                         1e-3 if normaltest_alpha is None else normaltest_alpha,
                         r2,
                         condition_direction,
+                        session_id,
                     )
 
-            out_layout = (get_output_layout(results),)
 
-            results.columns = results.columns = [",".join(c) for c in results.columns]
+            results_convert = pd.DataFrame(results)
+            results_convert.columns = [tuple(c.split(",")) for c in results_convert.columns]
+            out_layout = (get_output_layout(results_convert),)
             return (
                 out_layout,
                 "",
                 {"display": "None"},
-                results.to_dict(),
+                session_id, # results
             )
         except Exception as e:
             return (
