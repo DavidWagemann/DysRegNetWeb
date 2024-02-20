@@ -11,6 +11,11 @@ Navigate to the folder
 cd DysRegNetWeb
 ```
 
+### GTEx data
+In order to use GTEx control data, the relevant .gct files must be placed in the GTEx-data folder. The files can be downloaded from the [GTEx Portal](https://www.gtexportal.org/home/downloads/adult-gtex/bulk_tissue_expression). 
+
+There you can download tissue specific files from the "Gene TPMs by tissue" Section. These have to be unpacked before being placed into the GTEx-data folder.
+
 ### For development and debugging
 
 #### Launching the web app
