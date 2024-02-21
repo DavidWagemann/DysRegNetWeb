@@ -6,6 +6,7 @@ import pandas as pd
 from dash import callback, clientside_callback, dcc, exceptions, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from pages.components.detail import detail, user_edge_detail, user_node_detail
+from pages.components.dysregnet_cache import cache, get_cached_results
 from pages.components.dysregnet_results import (
     get_graph_data,
     get_num_regulation,
@@ -18,7 +19,6 @@ from pages.components.plots import blank_fig, dysregulation_heatmap
 from pages.components.popovers import get_popovers
 from pages.components.settings import get_user_settings
 from pages.components.tabs import user_data_tabs
-from pages.components.dysregnet_cache import cache, get_results
 
 
 def get_output_layout(results: pd.DataFrame) -> dbc.Container:
@@ -125,7 +125,7 @@ def update_gene_input(
 )
 def update_graph_data(genes: List[str], session_id: str):
     if len(genes) > 0:
-        results = pd.DataFrame(get_results(session_id))
+        results = pd.DataFrame(get_cached_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
         sources = get_sources(results, genes)
@@ -183,7 +183,7 @@ def update_detail(node: Dict[str, Any], edge: Dict[str, Any], genes: List[str]):
 )
 def download_dysregnet_results(n_clicks: int, session_id):
     if n_clicks > 0:
-        results = pd.DataFrame(get_results(session_id))
+        results = pd.DataFrame(get_cached_results(session_id))
         # results.columns = [tuple(c.split(",")) for c in results.columns]
         csv_str = results.to_csv()
 
@@ -201,7 +201,7 @@ def download_dysregnet_results(n_clicks: int, session_id):
 )
 def download_graph_full(n_clicks: int, session_id: str, genes: List[str]):
     if n_clicks > 0 and len(genes) != 0:
-        results = pd.DataFrame(get_results(session_id))
+        results = pd.DataFrame(get_cached_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
         sources = get_sources(results, genes)
@@ -301,7 +301,7 @@ def update_dysregulation_plot(
 ):
     if n_clicks > 0 and elements is not None:
         if len(genes) > 0:
-            results = pd.DataFrame(get_results(session_id))
+            results = pd.DataFrame(get_cached_results(session_id))
             results.columns = [c.replace(",", ":") for c in results.columns]
 
             regulation_ids = [
@@ -334,3 +334,19 @@ def update_dysregulation_plot(
             ]
 
     raise dash.exceptions.PreventUpdate
+
+
+@callback(
+    Output("session_id_label", "children"),
+    Input(component_id="session_id", component_property="value"),
+    State("url", "href"),
+)
+def show_session_id(session_id: str, url: str):
+    url = "/".join(url.split("/")[:-1]) + "/user_data?" + session_id
+    print(url)
+    return [
+        session_id,
+        dcc.Clipboard(
+            content=url, style={"marginLeft": "5px", "display": "inline-block"}
+        ),
+    ]

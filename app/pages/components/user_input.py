@@ -13,6 +13,7 @@ from dash import callback, ctx, dcc, html
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
 from pages.components.control_data import ControlData
+from pages.components.dysregnet_cache import check_cache, get_cached_results
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
@@ -1188,10 +1189,10 @@ def enable_run_button(condition: Union[str, None]) -> Tuple[bool, str]:
 
 
 @app.callback(
-    Output("user-main", "children"),
+    Output("user-main", "children", allow_duplicate=True),
     Output("errorbox", "children", allow_duplicate=True),
     Output("errorbox", "style", allow_duplicate=True),
-    Output("session_id", "value"),
+    Output("session_id", "value", allow_duplicate=True),
     # Output("session_id", "inputs"), # TODO return caching of DysRegnet parameters by session-id
     inputs=[
         Input("run", "n_clicks"),
@@ -1275,6 +1276,7 @@ def run(
             meta = meta_auto
 
         session_id = str(uuid4())
+
         try:
             with DysregnetProgress() as f:
                 f.set_max(max=len(pd.DataFrame(network)))
@@ -1317,3 +1319,36 @@ def run(
             )
 
     return dash.no_update, "", {"display": "None"}, {}
+
+
+@app.callback(
+    Output("user-main", "children", allow_duplicate=True),
+    Output("errorbox", "children", allow_duplicate=True),
+    Output("errorbox", "style", allow_duplicate=True),
+    Output("session_id", "value"),
+    Input("url", "search"),
+    prevent_initial_call="initial_duplicate",
+)
+def load_saved(url: str):
+    session_id = url.strip("?")
+    if session_id == "":
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    if check_cache(session_id):
+        results = get_cached_results(session_id)
+        results.columns = [tuple(c.split(",")) for c in results.columns]
+        out_layout = (get_output_layout(results),)
+
+        return (
+            out_layout,
+            "",
+            {"display": "None"},
+            session_id,
+        )
+
+    return (
+        dash.no_update,
+        f"Could not find DysRegNet Run with ID: {session_id}",
+        {"display": "block"},
+        dash.no_update,
+    )

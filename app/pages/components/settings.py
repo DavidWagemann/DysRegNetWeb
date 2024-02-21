@@ -1,9 +1,11 @@
 import dash_bootstrap_components as dbc
 import pages.components.parameters as parameters
 from dash import dcc, html
-from pages.components.popovers import heading_with_info, info_button
 from pages.components.db import NetworkDB
+from pages.components.popovers import heading_with_info, info_button
+
 db = NetworkDB()
+
 
 def get_settings():
     settings = [
@@ -53,8 +55,8 @@ def get_settings():
                     ),
                     html.Label("Patient Specific:"),
                     dcc.Dropdown(
-                        #options=dropdown_options,
-                        #value=dropdown_options[0]["value"],
+                        # options=dropdown_options,
+                        # value=dropdown_options[0]["value"],
                         options=[],
                         value=None,
                         multi=False,
@@ -82,10 +84,10 @@ def get_settings():
                         value=True,
                     ),
                     dbc.Switch(
-                    id="patient_switch",
-                    label="Display patient specific data",
-                    value=False,
-                )
+                        id="patient_switch",
+                        label="Display patient specific data",
+                        value=False,
+                    ),
                 ]
             ),
             className="mt-3",
@@ -242,6 +244,11 @@ def get_user_settings():
         dcc.Download(id="download_user_dysregnet"),
         dcc.Download(id="download_user_graph_full"),
         dcc.Download(id="download_user_graph_displayed"),
+        dbc.Alert(
+            id="session_id_label",
+            color="dark",
+            style={"textAlign": "center", "fontSize": "1.3em"},
+        ),
     ]
 
     return settings
