@@ -143,7 +143,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 			}
         },
 
-		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, genes) {
+		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, patient_switch, genes) {
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
@@ -194,6 +194,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 					reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
 					reg["data"]["diff"] = 0;
 						
+					if (patient_switch) { 
+						if (reg["data"]["regulation_id"] in data["patient"]) {
+							reg["data"]["colors"] = "red red red red";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+                        } else {
+							reg["data"]["colors"] = "grey grey grey grey";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+						}
+					}
+
 					if(Object.keys(gene).length === 0){
 						nr += 1;
 						target_counter += 1;

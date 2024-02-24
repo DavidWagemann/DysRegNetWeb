@@ -12,12 +12,13 @@ import pandas as pd
 from dash import callback, ctx, dcc, html
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
+from pandas.testing import assert_index_equal
+
 from pages.components.control_data import ControlData
 from pages.components.dysregnet_cache import check_cache, get_cached_results
 from pages.components.dysregnet_progress import DysregnetProgress
 from pages.components.run_dysregnet import get_results
 from pages.components.user_output import get_output_layout
-from pandas.testing import assert_index_equal
 
 control_data = ControlData()
 

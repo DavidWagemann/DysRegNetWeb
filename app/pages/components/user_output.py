@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import callback, clientside_callback, dcc, exceptions, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
+
 from pages.components.detail import detail, user_edge_detail, user_node_detail
 from pages.components.dysregnet_cache import cache, get_cached_results
 from pages.components.dysregnet_results import (
@@ -120,19 +121,32 @@ def update_gene_input(
         component_property="children",
     ),
     Input(component_id="user_gene_id_input", component_property="value"),
+    Input(component_id="user_patient_specific", component_property="value"),
     State(component_id="session_id", component_property="value"),
     prevent_initial_call=True,
 )
-def update_graph_data(genes: List[str], session_id: str):
+def update_graph_data(genes: List[str], patient_id: str, session_id: str):
     if len(genes) > 0:
         results = pd.DataFrame(get_cached_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
+
+        patient_data = None
+        if patient_id is not None:
+            # filtered_results = results[:, results.columns.isin(genes)]
+            filtered_results = results.loc[results.index.isin([patient_id])]
+            filtered_results = filtered_results.loc[
+                :, (filtered_results != 0).any(axis=0)
+            ]
+            patient_data = [
+                [":".join(edge), patient_id, filtered_results[edge].iloc[0]]
+                for edge in filtered_results.columns
+            ]
 
         sources = get_sources(results, genes)
         targets = get_targets(results, genes)
 
         total_regulations = get_num_regulation(sources, targets)
-        user_store_graph = get_graph_data(sources, targets, genes)
+        user_store_graph = get_graph_data(sources, targets, genes, patient_data)
         return (
             user_store_graph,
             total_regulations["total_targets"],
@@ -152,6 +166,7 @@ clientside_callback(
     Input(component_id="min_fraction_slider", component_property="value"),
     Input(component_id="max_regulations_slider", component_property="value"),
     Input(component_id="user_store_graph", component_property="data"),
+    Input(component_id="user_patient_switch", component_property="value"),
     State(component_id="user_gene_id_input", component_property="value"),
     prevent_initial_call=False,
 )
@@ -207,7 +222,7 @@ def download_graph_full(n_clicks: int, session_id: str, genes: List[str]):
         sources = get_sources(results, genes)
         targets = get_targets(results, genes)
 
-        graph_data = get_graph_data(sources, targets, genes)
+        graph_data = get_graph_data(sources, targets, genes, None)
 
         return graph_to_csv(graph_data)
 
@@ -338,15 +353,26 @@ def update_dysregulation_plot(
 
 @callback(
     Output("session_id_label", "children"),
-    Input(component_id="session_id", component_property="value"),
-    State("url", "href"),
+    Input("url", "href"),
+    State(component_id="session_id", component_property="value"),
 )
-def show_session_id(session_id: str, url: str):
+def show_session_id(url: str, session_id: str):
     url = "/".join(url.split("/")[:-1]) + "/user_data?" + session_id
-    print(url)
     return [
         session_id,
         dcc.Clipboard(
             content=url, style={"marginLeft": "5px", "display": "inline-block"}
         ),
     ]
+
+
+@callback(
+    Output(component_id="user_patient_specific", component_property="options"),
+    Input(component_id="session_id", component_property="value"),
+)
+def update_user_patient_specific_options(session_id):
+    results = pd.DataFrame(get_cached_results(session_id))
+    patient_ids = results.index.tolist()
+    dropdown_options = [{"label": name, "value": name} for name in patient_ids]
+
+    return dropdown_options

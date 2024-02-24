@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
-import pages.components.parameters as parameters
 from dash import dcc, html
+
+import pages.components.parameters as parameters
 from pages.components.db import NetworkDB
 from pages.components.popovers import heading_with_info, info_button
 
@@ -181,6 +182,18 @@ def get_user_settings():
                         multi=False,
                         id="display_nodes",
                     ),
+                    html.Br(),
+                    dbc.Switch(
+                        id="user_patient_switch",
+                        label="Display patient specific data",
+                        value=False,
+                    ),
+                    dcc.Dropdown(
+                        # options=dropdown_options,
+                        # value=dropdown_options[0]["value"],
+                        multi=False,
+                        id="user_patient_specific",
+                    ),
                 ]
             ),
         ),
@@ -250,5 +263,4 @@ def get_user_settings():
             style={"textAlign": "center", "fontSize": "1.3em"},
         ),
     ]
-
     return settings
