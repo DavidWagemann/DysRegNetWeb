@@ -5,19 +5,19 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import callback, clientside_callback, dcc, exceptions, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
-from pages.components.detail import detail, user_edge_detail, user_node_detail
-from pages.components.dysregnet_results import (
+from .detail import detail, user_edge_detail, user_node_detail
+from .dysregnet_results import (
     get_graph_data,
     get_num_regulation,
     get_sources,
     get_targets,
     graph_to_csv,
 )
-from pages.components.graph import get_graph
-from pages.components.plots import blank_fig, dysregulation_heatmap
-from pages.components.popovers import get_popovers
-from pages.components.settings import get_user_settings
-from pages.components.tabs import user_data_tabs
+from .graph import get_graph
+from .plots import blank_fig, dysregulation_heatmap
+from .popovers import get_popovers
+from .settings import get_user_settings
+from .tabs import user_data_tabs
 
 
 def get_output_layout(results: pd.DataFrame) -> dbc.Container:

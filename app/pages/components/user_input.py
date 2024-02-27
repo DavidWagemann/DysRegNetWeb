@@ -12,10 +12,14 @@ from pandas.testing import assert_index_equal
 from dash import callback, dcc, html, ctx
 from dash._callback import NoUpdate
 from dash.dependencies import Input, Output, State
-from pages.components.dysregnet_progress import DysregnetProgress
-from pages.components.run_dysregnet import get_results
-from pages.components.user_output import get_output_layout
-from pages.components.control_data import ControlData
+from .dysregnet_progress import DysregnetProgress
+from .run_dysregnet import get_results
+from .user_output import get_output_layout
+from .control_data import ControlData
+# from pages.components.dysregnet_progress import DysregnetProgress
+# from pages.components.run_dysregnet import get_results
+# from pages.components.user_output import get_output_layout
+# from pages.components.control_data import ControlData
 
 
 control_data = ControlData()
@@ -771,11 +775,13 @@ def prepare_control_data(control_option: Union[str, None], expression: Dict[str,
     """
     
     if control_option is not None:
-
-        control_data.load_control_data(control_option)
-
+        # import json
+        # json.dump(expression, open("app/bench/expression_dict.txt", 'w+'))
         expression_df = pd.DataFrame(expression)
-
+        if expression_df.empty:
+            raise dash.exceptions.PreventUpdate
+        
+        control_data.load_control_data(control_option)
         # Original control data is indexed using genes in user expressoin data
         # Genes in user data that do not exist in the control data are returned as a list, 
         # which should be dropped from user expression data
@@ -794,7 +800,6 @@ def prepare_control_data(control_option: Union[str, None], expression: Dict[str,
             # Using the same logic as in `show_dropdown_options` function
             meta_df = pd.DataFrame(new_meta)
             expression_df = pd.concat([expression_df, control_data.control_data])
-
 
             if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
                 return (

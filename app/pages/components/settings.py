@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
-import pages.components.parameters as parameters
 from dash import dcc, html
-from pages.components.popovers import heading_with_info, info_button
+from . import parameters
+from .popovers import heading_with_info, info_button
 
 
 def get_settings():

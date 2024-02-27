@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
-from pages.components.popovers import (
+from .popovers import (
     get_gene_popover,
     get_regulation_popover,
     heading_with_info,

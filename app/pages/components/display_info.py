@@ -3,7 +3,7 @@ import os
 import dash_bootstrap_components as dbc
 from dash import html
 
-from pages.components.popovers import heading_with_info
+from .popovers import heading_with_info
 
 display_info = dbc.Card(
     dbc.CardBody(

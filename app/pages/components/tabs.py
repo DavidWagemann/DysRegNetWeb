@@ -1,10 +1,10 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from pages.components.detail import detail
-from pages.components.display_info import display_info, user_display_info
-from pages.components.plots import blank_fig
-from pages.components.popovers import heading_with_info
+from .detail import detail
+from .display_info import display_info, user_display_info
+from .plots import blank_fig
+from .popovers import heading_with_info
 
 tab_info = html.Div([display_info])
 user_tab_info = html.Div([user_display_info])
