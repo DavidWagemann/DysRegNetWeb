@@ -11,9 +11,13 @@ def get_targets(results: pd.DataFrame, ids: List[str]):
     return results[[t for t in results.columns if t[1] in ids]]
 
 
-def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str]):
-    combined = pd.concat([sources, targets], axis=1)
-    combined = combined.T.drop_duplicates().T
+def get_graph_data(
+    sources: pd.DataFrame,
+    targets: pd.DataFrame,
+    ids: List[str],
+    patient_data: List[List[str]],
+):
+    targets = targets[targets.columns.difference(sources.columns)]
 
     source_regulations = [
         [
@@ -24,10 +28,10 @@ def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str])
                     "regulation_id": f"{col[0]}:{col[1]}",
                     "fraction": float((sources[[col]] != 0).sum() / len(sources)),
                     "weight": float((sources[[col]] != 0).sum() / len(sources)) * 10
-                    + 2,  # TODO: what is this?
-                    "classes": "r"
-                    if sources[col].mean() < 0
-                    else "a",  # TODO: check if this is correct
+                    + 2,
+                    "classes": (
+                        "r" if sources[col].mean() < 0 else "a"
+                    ),  # TODO: check if this is correct
                 },
                 "classes": "r" if sources[col].mean() < 0 else "a",
             },
@@ -70,7 +74,6 @@ def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str])
         ]
         for col in targets
     ]
-
     return {
         "center": [
             {
@@ -80,6 +83,18 @@ def get_graph_data(sources: pd.DataFrame, targets: pd.DataFrame, ids: List[str])
             for id in ids
         ],
         "regulations": source_regulations + target_regulations,
+        "patient": (
+            {
+                regulation[0]: regulation[2]
+                for regulation in patient_data
+                if (
+                    regulation[0].split(":")[0] in ids
+                    or regulation[0].split(":")[1] in ids
+                )
+            }
+            if patient_data is not None
+            else {}
+        ),
     }
 
 

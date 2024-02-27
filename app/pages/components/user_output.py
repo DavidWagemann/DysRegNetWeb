@@ -1,11 +1,13 @@
 from typing import Any, Dict, List
 
+import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import callback, clientside_callback, dcc, exceptions, html
 from dash.dependencies import ClientsideFunction, Input, Output, State
 
 from pages.components.detail import detail, user_edge_detail, user_node_detail
+from pages.components.dysregnet_cache import cache, get_cached_results
 from pages.components.dysregnet_results import (
     get_graph_data,
     get_num_regulation,
@@ -14,6 +16,7 @@ from pages.components.dysregnet_results import (
     graph_to_csv,
 )
 from pages.components.graph import get_graph
+from pages.components.plots import blank_fig, dysregulation_heatmap
 from pages.components.popovers import get_popovers
 from pages.components.settings import get_user_settings
 from pages.components.tabs import user_data_tabs
@@ -98,12 +101,12 @@ def update_gene_input(
     search_value: str, value: List[str], data: Dict[str, List[str]]
 ) -> List[str]:
     if not search_value:
-        raise exceptions.PreventUpdate
+        return data["gene_ids"]
 
     return [
         o
         for o in data["gene_ids"]
-        if search_value in o["label"] or o["value"] in (value or [])
+        if search_value.upper() in o["label"].upper() or o["value"] in (value or [])
     ]
 
 
@@ -117,27 +120,40 @@ def update_gene_input(
         component_id="user_total_sources",
         component_property="children",
     ),
-    Input("user_gene_id_input", "value"),
-    State("results", "data"),
+    Input(component_id="user_gene_id_input", component_property="value"),
+    Input(component_id="user_patient_specific", component_property="value"),
+    State(component_id="session_id", component_property="value"),
     prevent_initial_call=True,
 )
-def update_graph_data(genes: List[str], results_json: str):
-    if len(genes) != 0:
-        results = pd.DataFrame(results_json)
+def update_graph_data(genes: List[str], patient_id: str, session_id: str):
+    if len(genes) > 0:
+        results = pd.DataFrame(get_cached_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
+
+        patient_data = None
+        if patient_id is not None:
+            # filtered_results = results[:, results.columns.isin(genes)]
+            filtered_results = results.loc[results.index.isin([patient_id])]
+            filtered_results = filtered_results.loc[
+                :, (filtered_results != 0).any(axis=0)
+            ]
+            patient_data = [
+                [":".join(edge), patient_id, filtered_results[edge].iloc[0]]
+                for edge in filtered_results.columns
+            ]
 
         sources = get_sources(results, genes)
         targets = get_targets(results, genes)
 
         total_regulations = get_num_regulation(sources, targets)
-        user_store_graph = get_graph_data(sources, targets, genes)
+        user_store_graph = get_graph_data(sources, targets, genes, patient_data)
         return (
             user_store_graph,
             total_regulations["total_targets"],
             total_regulations["total_sources"],
         )
 
-    raise exceptions.PreventUpdate
+    return {}, 0, 0
 
 
 clientside_callback(
@@ -150,6 +166,7 @@ clientside_callback(
     Input(component_id="min_fraction_slider", component_property="value"),
     Input(component_id="max_regulations_slider", component_property="value"),
     Input(component_id="user_store_graph", component_property="data"),
+    Input(component_id="user_patient_switch", component_property="value"),
     State(component_id="user_gene_id_input", component_property="value"),
     prevent_initial_call=False,
 )
@@ -174,21 +191,38 @@ def update_detail(node: Dict[str, Any], edge: Dict[str, Any], genes: List[str]):
 
 
 @callback(
+    Output(component_id="download_user_dysregnet", component_property="data"),
+    Input(component_id="btn_download_dysregnet", component_property="n_clicks"),
+    State(component_id="session_id", component_property="value"),
+    prevent_initial_call=True,
+)
+def download_dysregnet_results(n_clicks: int, session_id):
+    if n_clicks > 0:
+        results = pd.DataFrame(get_cached_results(session_id))
+        # results.columns = [tuple(c.split(",")) for c in results.columns]
+        csv_str = results.to_csv()
+
+        return dict(content=csv_str + "\n", filename="results.csv")
+
+    raise exceptions.PreventUpdate
+
+
+@callback(
     Output(component_id="download_user_graph_full", component_property="data"),
     Input(component_id="btn_download_user_graph_full", component_property="n_clicks"),
-    State(component_id="results", component_property="data"),
+    State(component_id="session_id", component_property="value"),
     State(component_id="user_gene_id_input", component_property="value"),
     prevent_initial_call=True,
 )
-def download_graph_full(n_clicks: int, results_json: Dict[str, str], genes: List[str]):
+def download_graph_full(n_clicks: int, session_id: str, genes: List[str]):
     if n_clicks > 0 and len(genes) != 0:
-        results = pd.DataFrame(results_json)
+        results = pd.DataFrame(get_cached_results(session_id))
         results.columns = [tuple(c.split(",")) for c in results.columns]
 
         sources = get_sources(results, genes)
         targets = get_targets(results, genes)
 
-        graph_data = get_graph_data(sources, targets, genes)
+        graph_data = get_graph_data(sources, targets, genes, None)
 
         return graph_to_csv(graph_data)
 
@@ -249,16 +283,96 @@ def select_query(n_clicks: int, gene: str):
     Input("user_center_add_button", "n_clicks"),
     State("user_center_add_button", "children"),
     State("detail_selected_gene", "children"),
-    State("user_gene_id_input", "options"),
+    State("user_gene_id_input", "value"),
     prevent_initial_call=True,
 )
 def add_query(n_clicks: int, change_type: List[str], gene: str, current: List[str]):
     if n_clicks > 0:
         if "Add" in change_type[1]:
-            new = current.append(gene)
+            current.append(gene)
         else:
-            new = [q for q in current if q != gene]
+            current.remove(gene)
 
-        return new
+        return current
 
     raise exceptions.PreventUpdate
+
+
+@callback(
+    Output(component_id="user_dysregulation_plot", component_property="figure"),
+    Output(
+        component_id="user_refresh_dysregulation_button", component_property="children"
+    ),
+    Input(
+        component_id="user_refresh_dysregulation_button", component_property="n_clicks"
+    ),
+    State(component_id="user_graph", component_property="elements"),
+    State(component_id="user_gene_id_input", component_property="value"),
+    State(component_id="session_id", component_property="value"),
+    prevent_initial_call=True,
+)
+def update_dysregulation_plot(
+    n_clicks: int, elements, genes: List[str], session_id: str
+):
+    if n_clicks > 0 and elements is not None:
+        if len(genes) > 0:
+            results = pd.DataFrame(get_cached_results(session_id))
+            results.columns = [c.replace(",", ":") for c in results.columns]
+
+            regulation_ids = [
+                element["data"]["regulation_id"]
+                for element in elements
+                if "regulation_id" in element["data"]
+            ]
+
+            results = results.filter(items=regulation_ids)
+            results = results.loc[(results != 0).any(axis=1)]
+
+            rows = results.index.tolist()
+            data = []
+            for col in results.columns:
+                rowindex = 0
+                for value in results[col]:
+                    if value != 0:
+                        data.append([str(col), rows[rowindex], value])
+                    rowindex += 1
+
+            return dysregulation_heatmap(data), [
+                html.I(className="fa fa-refresh mr-1"),
+                " Refresh",
+            ]
+
+        else:
+            return blank_fig(), [
+                html.I(className="fa fa-refresh mr-1"),
+                " Refresh",
+            ]
+
+    raise dash.exceptions.PreventUpdate
+
+
+@callback(
+    Output("session_id_label", "children"),
+    Input("url", "href"),
+    State(component_id="session_id", component_property="value"),
+)
+def show_session_id(url: str, session_id: str):
+    url = "/".join(url.split("/")[:-1]) + "/user_data?" + session_id
+    return [
+        session_id,
+        dcc.Clipboard(
+            content=url, style={"marginLeft": "5px", "display": "inline-block"}
+        ),
+    ]
+
+
+@callback(
+    Output(component_id="user_patient_specific", component_property="options"),
+    Input(component_id="session_id", component_property="value"),
+)
+def update_user_patient_specific_options(session_id):
+    results = pd.DataFrame(get_cached_results(session_id))
+    patient_ids = results.index.tolist()
+    dropdown_options = [{"label": name, "value": name} for name in patient_ids]
+
+    return dropdown_options

@@ -1,14 +1,14 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
-        update_graph: function(diameter_type, display_nodes, min_fraction_slider, max_regulations_slider, graph_data, compare_switch, selection_data) {
+        update_graph: function(diameter_type, display_nodes, min_fraction_slider, max_regulations_slider, graph_data, compare_switch,patient_switch, selection_data) {
 
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
-				console.log(data)
 				var layout = {"name": "klay"};
 				var display = new Set();
 				var compare = "compare" in data;
+				var patient = "patient" in data;
 
 				if (display_nodes !== 'a'){
 					
@@ -85,11 +85,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 					         reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
                         }
 
-
-                        reg["data"]["diff"] = diff * -1;
-
-
+						
+						
 					}
+
+
+					if (patient_switch) { 
+						if (reg["data"]["regulation_id"] in data["patient"]) {
+							reg["data"]["colors"] = "red red red red";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+                        } else {
+							reg["data"]["colors"] = "grey grey grey grey";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+						}
+					}
+					
 					
 					if(Object.keys(gene).length === 0){
 						nr += 1;
@@ -129,17 +139,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 				return [elements, layout, target_counter, source_counter, compare];
 			}
 			else{
-				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0, window.dash_clientside.no_update];
+				return [[], {"name": "klay"}, 0, 0]
 			}
         },
 
-		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, genes) {
-			//Check if these two functions can't be merged
-
+		update_user_graph: function(display_nodes, min_fraction_slider, max_regulations_slider, graph_data, patient_switch, genes) {
 			if(Object.keys(graph_data).length != 0){
 				
 				var data = JSON.parse(JSON.stringify(graph_data))
-				console.log(data)
 				var layout = {"name": "klay"};
 				var display = new Set();
 
@@ -187,6 +194,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 					reg["data"]["divide"] = "0% "+ reg["data"]["fraction"]*100+"% " + reg["data"]["fraction"]*100 + "% 100%";
 					reg["data"]["diff"] = 0;
 						
+					if (patient_switch) { 
+						if (reg["data"]["regulation_id"] in data["patient"]) {
+							reg["data"]["colors"] = "red red red red";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+                        } else {
+							reg["data"]["colors"] = "grey grey grey grey";
+                            reg["data"]["divide"] = "0% "+ 0*100+"% " + 1*100 + "% 100%";
+						}
+					}
+
 					if(Object.keys(gene).length === 0){
 						nr += 1;
 						target_counter += 1;
@@ -208,11 +225,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 						elements.push(reg);
 					}
 				}
-
 				return [elements, layout, target_counter, source_counter];
 			}
 			else{
-				return [window.dash_clientside.no_update, window.dash_clientside.no_update, 0, 0];
+				return [[], {"name": "klay"}, 0, 0]
 			}
         }
 
