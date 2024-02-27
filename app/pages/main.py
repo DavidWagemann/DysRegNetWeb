@@ -12,6 +12,7 @@ from pages.components.db import NetworkDB
 from pages.components.detail import detail, edge_detail, node_detail
 from pages.components.graph import get_graph
 from pages.components.plots import (
+    blank_fig,
     dysregulation_heatmap,
     methylation_heatmap,
     mutation_bar,
@@ -19,8 +20,6 @@ from pages.components.plots import (
 from pages.components.popovers import get_cancer_map, get_popovers
 from pages.components.settings import get_settings
 from pages.components.tabs import tabs
-
-from pages.components.plots import blank_fig
 
 dash.register_page(__name__, path="/")
 
@@ -130,6 +129,7 @@ clientside_callback(
     Input(component_id="max_regulations_slider", component_property="value"),
     Input(component_id="store_graph", component_property="data"),
     Input(component_id="compare_switch", component_property="value"),
+    Input(component_id="patient_switch", component_property="value"),
     State(component_id="store_selection", component_property="data"),
 )
 
@@ -159,6 +159,17 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
 
 
 @callback(
+    Output(component_id="patient_specific", component_property="options"),
+    Output(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
+)
+def update_patient_specific_options(selected_cancer_id):
+    dropdown_options = db.get_all_patient_ids(selected_cancer_id)
+    default_value = dropdown_options[0]["value"] if dropdown_options else None
+    return dropdown_options, default_value
+
+
+@callback(
     Output(component_id="store_graph", component_property="data", allow_duplicate=True),
     Output(
         component_id="total_targets",
@@ -172,14 +183,31 @@ def update_selection_data(selected_gene_ids, cancer_id, selection_data):
     ),
     Input(component_id="store_selection", component_property="data"),
     Input(component_id="compare_cancer", component_property="value"),
+    Input(component_id="patient_specific", component_property="value"),
+    Input(component_id="cancer_id_input", component_property="value"),
     prevent_initial_call=True,
 )
-def update_graph_data(selection_data, compare_cancer):
+def update_graph_data(
+    selection_data, compare_cancer, patient_specific, cancer_id_input
+):
     if len(selection_data["gene_ids"]) > 0 and selection_data["cancer_id"] != "":
         graph_data = db.get_neighborhood_multi(
             selection_data["gene_ids"], selection_data["cancer_id"]
         )
         store_graph, total_regulations = neo4j2Store.get_neighborhood(graph_data)
+        if patient_specific is not None:
+            patient_data = db.get_dysregulation_patient_specific(
+                [
+                    regulation[0]["data"]["regulation_id"]
+                    for regulation in store_graph["regulations"]
+                ],
+                cancer_id_input,
+                patient_specific,
+            )
+
+            store_graph["patient"] = {
+                regulation[0]: regulation[2] for regulation in patient_data
+            }
 
         if compare_cancer is not None:
             compare_data = db.get_fraction_map(
@@ -190,6 +218,7 @@ def update_graph_data(selection_data, compare_cancer):
                 compare_cancer,
             )
             store_graph["compare"] = compare_data
+
         return (
             store_graph,
             total_regulations["total_targets"],
@@ -355,10 +384,7 @@ def update_mutation_plot(elements):
     prevent_initial_call=True,
 )
 def update_methylation_plot(n_clicks, selection_data):
-    if (
-        n_clicks > 0
-        and selection_data["cancer_id"] != ""
-    ):
+    if n_clicks > 0 and selection_data["cancer_id"] != "":
         if len(selection_data["gene_ids"]) > 0:
             data = db.get_methylation(
                 list(selection_data["gene_ids"]), selection_data["cancer_id"]
@@ -386,11 +412,7 @@ def update_methylation_plot(n_clicks, selection_data):
     prevent_initial_call=True,
 )
 def update_dysregulation_plot(n_clicks, elements, selection_data):
-    if (
-        n_clicks > 0
-        and elements is not None
-        and selection_data["cancer_id"] != ""
-    ):
+    if n_clicks > 0 and elements is not None and selection_data["cancer_id"] != "":
         if len(selection_data["gene_ids"]) > 0:
             regulation_ids = [
                 element["data"]["regulation_id"]

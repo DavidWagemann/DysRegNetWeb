@@ -115,9 +115,9 @@ class ControlData:
             return None
     
 
-if __name__ == "__main__":
-    gtex_control_data = parse("GTEx-data/gene_tpm_adipose_subcutaneous.gct")
-
-    print(gtex_control_data.row_metadata_df.shape)
-    print(gtex_control_data.col_metadata_df.shape)
-    print(gtex_control_data.data_df.shape)
+# if __name__ == "__main__":
+#     gtex_control_data = parse("GTEx-data/gene_tpm_adipose_subcutaneous.gct")
+# 
+#     print(gtex_control_data.row_metadata_df.shape)
+#     print(gtex_control_data.col_metadata_df.shape)
+#     print(gtex_control_data.data_df.shape)

@@ -1,5 +1,7 @@
-/data/
-/.idea/
-/app/pages/components/__pycache__/
-*/__pycache__/
-/cache/
+# ignore DB data
+data/
+
+# ignore IDE data and caches
+.idea/
+**/__pycache__/
+cache/*

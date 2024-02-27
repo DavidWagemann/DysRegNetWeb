@@ -1,7 +1,11 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+
 from . import parameters
-from .popovers import heading_with_info, info_button
+from .db import NetworkDB
+from .popovers import heading_with_info
+
+db = NetworkDB()
 
 
 def get_settings():
@@ -50,6 +54,15 @@ def get_settings():
                         multi=False,
                         id="display_nodes",
                     ),
+                    html.Label("Patient Specific:"),
+                    dcc.Dropdown(
+                        # options=dropdown_options,
+                        # value=dropdown_options[0]["value"],
+                        options=[],
+                        value=None,
+                        multi=False,
+                        id="patient_specific",
+                    ),
                 ]
             ),
         ),
@@ -70,6 +83,11 @@ def get_settings():
                         id="compare_switch",
                         label="Display dysregulation difference",
                         value=True,
+                    ),
+                    dbc.Switch(
+                        id="patient_switch",
+                        label="Display patient specific data",
+                        value=False,
                     ),
                 ]
             ),
@@ -164,6 +182,18 @@ def get_user_settings():
                         multi=False,
                         id="display_nodes",
                     ),
+                    html.Br(),
+                    dbc.Switch(
+                        id="user_patient_switch",
+                        label="Display patient specific data",
+                        value=False,
+                    ),
+                    dcc.Dropdown(
+                        # options=dropdown_options,
+                        # value=dropdown_options[0]["value"],
+                        multi=False,
+                        id="user_patient_specific",
+                    ),
                 ]
             ),
         ),
@@ -227,6 +257,10 @@ def get_user_settings():
         dcc.Download(id="download_user_dysregnet"),
         dcc.Download(id="download_user_graph_full"),
         dcc.Download(id="download_user_graph_displayed"),
+        dbc.Alert(
+            id="session_id_label",
+            color="dark",
+            style={"textAlign": "center", "fontSize": "1.3em"},
+        ),
     ]
-
     return settings
