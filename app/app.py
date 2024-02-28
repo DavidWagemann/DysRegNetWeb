@@ -8,7 +8,7 @@ from flask import Flask
 if "REDIS_URL" in os.environ:
     # Use Redis & Celery if REDIS_URL set as an env variable
     print("Using REDIS_URL: ", os.environ["REDIS_URL"])
-    
+
     from celery import Celery
 
     celery_broker = Celery(
@@ -19,8 +19,10 @@ if "REDIS_URL" in os.environ:
 else:
     # Hard coded Redis url for non-production apps when developing locally
     REDIS_URL = "redis://127.0.0.1:6379"
-    print("No REDIS_URL environment variable.\nUsing ", REDIS_URL, " (hard coded) instead")
-    
+    print(
+        "No REDIS_URL environment variable.\nUsing ", REDIS_URL, " (hard coded) instead"
+    )
+
     from celery import Celery
 
     celery_broker = Celery(__name__, broker=REDIS_URL, backend=REDIS_URL)

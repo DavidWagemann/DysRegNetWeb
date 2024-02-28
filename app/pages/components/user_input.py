@@ -852,6 +852,7 @@ def prepare_control_data(
             control_data.control_data.insert(
                 0, expression_df.columns[0], control_data.control_data.index
             )
+
             expression_df.drop(columns=genes_not_exist, inplace=True)
             assert_index_equal(expression_df.columns, control_data.control_data.columns)
 
@@ -866,6 +867,11 @@ def prepare_control_data(
             # Using the same logic as in `show_dropdown_options` function
             meta_df = pd.DataFrame(new_meta)
             expression_df = pd.concat([expression_df, control_data.control_data])
+            expression_df.reset_index(drop=True, inplace=True)
+
+            import sys
+
+            print(sys.getsizeof(expression_df.to_dict()))
 
             if set(meta_df.iloc[:, 0]) != set(expression_df.iloc[:, 0]):
                 return (
